@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="english-1.5">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/english-1.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/morph-1.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/morphology-1.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/robotstxt-java-1.0-SNAPSHOT-jar-with-dependencies.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/russian-1.5.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
