@@ -1,6 +1,10 @@
+package posikengine;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class Lemma {
     private int id;
     private String normalForm;

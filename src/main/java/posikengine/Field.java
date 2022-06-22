@@ -1,3 +1,5 @@
+package posikengine;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

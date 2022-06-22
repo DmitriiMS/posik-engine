@@ -1,3 +1,5 @@
+package posikengine;
+
 import com.google.search.robotstxt.RobotsMatcher;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
@@ -5,6 +7,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,6 +52,7 @@ public class Crawler extends RecursiveAction {
         Crawler.fields = fields;
 
         this.link = site;
+        log.info("created task");
     }
 
     @Override
@@ -72,7 +77,6 @@ public class Crawler extends RecursiveAction {
             int code = response.statusCode();
             String content = response.body();
 
-
             Document document = response.parse();
             List<Lemma> allLemmas = getAndRankAllLemmas(document);
 
@@ -81,10 +85,15 @@ public class Crawler extends RecursiveAction {
                 DBConnection.addPageToBuffer(numberOfPagesToCrawl, currentPage);
             }
 
-
-
             Set<String> filteredLinks = filterLinks(
-                    document.select("a[href]").stream().map(e -> e.attr("abs:href")).toList()
+                    document.select("a[href]")
+                            .stream()
+                            .map(e -> {
+                                String link = e.attr("abs:href");
+                                link = link.replaceAll("%(?![\\da-fA-F]{2})", "%25");
+                                link = link.replaceAll("\\+", "%2B");
+                                return URLDecoder.decode(link, StandardCharsets.UTF_8);
+                            }).toList()
             );
             if (filteredLinks.size() != 0) {
                 invokeAll(filteredLinks.stream().map(Crawler::new).toList());
@@ -101,7 +110,7 @@ public class Crawler extends RecursiveAction {
         List<Lemma> allLemmas = new ArrayList<>();
         for (Field f : fields) {
             String fieldText = doc.select(f.getSelector()).text();
-            for (Map.Entry<String, Integer> lemmaCount : MorphologyUtils.lemmatiseString(fieldText).entrySet()){
+            for (Map.Entry<String, Integer> lemmaCount : MorphologyUtils.getAndCountLemmasInString(fieldText).entrySet()){
                 Lemma tempLemma = new Lemma(lemmaCount.getKey(), lemmaCount.getValue(), lemmaCount.getValue() * f.getWeight());
                 int index = allLemmas.indexOf(tempLemma);
                 if (index < 0) {

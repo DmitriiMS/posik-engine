@@ -1,3 +1,5 @@
+package posikengine;
+
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.*;
@@ -11,6 +13,7 @@ public class DBConnection {
     private static volatile Connection connection;
 
     private static final int BUFFER_SIZE = 100;
+    private static int numberOfIndexedPages = 0;
 
     private static final Set<Page> pagesBuffer = ConcurrentHashMap.newKeySet(BUFFER_SIZE);
     private static PreparedStatement insertPageStatement;
@@ -49,7 +52,6 @@ public class DBConnection {
         createLemmaTable();
         createIndexTable();
     }
-
 
     public static void dropPageTable() throws SQLException {
         getConnection().createStatement().execute("DROP TABLE IF EXISTS page");
@@ -145,6 +147,7 @@ public class DBConnection {
         }
         getConnection().commit();
         insertIndex(pagesBuffer);
+        log.info("number of indexed pages: " + numberOfIndexedPages);
     }
 
     public static int insertPageAndGetId(Page p) throws SQLException {
@@ -170,6 +173,7 @@ public class DBConnection {
     }
 
     public static void insertIndex(Set<Page> pages) throws SQLException {
+        numberOfIndexedPages += pages.size();
         getConnection().setAutoCommit(false);
         for (Page p : pages) {
             for (Lemma l : p.getLemmas()) {
