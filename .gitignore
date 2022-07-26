@@ -3,6 +3,8 @@
 
 PosikEngine_log.log
 ./target/
+.idea/**/dataSources.xml
+.idea/**/sqldialects.xml
 
 # User-specific stuff
 .idea/**/workspace.xml
