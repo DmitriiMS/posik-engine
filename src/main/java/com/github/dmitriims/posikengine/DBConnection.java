@@ -1,4 +1,4 @@
-package posikengine;
+package com.github.dmitriims.posikengine;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,9 +44,11 @@ public class DBConnection {
         dropPageTable();
         dropFieldTable();
         dropLemmaTable();
+        dropSiteTable();
     }
 
     public static void createTables() throws SQLException {
+        createSiteTable();
         createPageTable();
         createFieldTable();
         createLemmaTable();
@@ -60,11 +62,13 @@ public class DBConnection {
     public static void createPageTable() throws SQLException {
         getConnection().createStatement().execute("CREATE TABLE page(" +
                 "id INT NOT NULL AUTO_INCREMENT, " +
-                "path TEXT NOT NULL, " +
+                "site_id INT NOT NULL, " +
+                "`path` TEXT NOT NULL, " +
                 "code INT NOT NULL, " +
                 "content MEDIUMTEXT NOT NULL, " +
                 "PRIMARY KEY(id), " +
-                "KEY (path(100)));");
+                "FOREIGN KEY(site_id) REFERENCES site(id), " +
+                "UNIQUE KEY (`path`(100)));");
     }
 
     public static void dropFieldTable() throws SQLException {
@@ -74,11 +78,11 @@ public class DBConnection {
     public static void createFieldTable() throws SQLException {
         getConnection().createStatement().execute("CREATE TABLE field(" +
                 "id INT NOT NULL AUTO_INCREMENT, " +
-                "name VARCHAR(255) NOT NULL, " +
+                "`name` VARCHAR(255) NOT NULL, " +
                 "selector VARCHAR(255) NOT NULL, " +
                 "weight FLOAT NOT NULL, " +
                 "PRIMARY KEY(id), " +
-                "UNIQUE KEY (name(255)));");
+                "UNIQUE KEY (`name`(255)));");
 
         getConnection().createStatement().execute("INSERT INTO field (name, selector, weight) " +
                 "VALUES ('title', 'title', 1.0), ('body', 'body', 0.8)");
@@ -91,9 +95,11 @@ public class DBConnection {
     public static void createLemmaTable() throws SQLException {
         getConnection().createStatement().execute("CREATE TABLE lemma(" +
                 "id INT NOT NULL AUTO_INCREMENT, " +
+                "site_id INT NOT NULL, " +
                 "lemma VARCHAR(255) NOT NULL, " +
                 "frequency INT NOT NULL, " +
                 "PRIMARY KEY(id), " +
+                "FOREIGN KEY(site_id) REFERENCES site(id), " +
                 "UNIQUE KEY (lemma(255)));");
     }
 
@@ -113,6 +119,21 @@ public class DBConnection {
                 "UNIQUE KEY page_lemma(page_id, lemma_id));");
     }
 
+    public static void createSiteTable() throws SQLException {
+        getConnection().createStatement().execute("create table site(" +
+                "id INT NOT NULL AUTO_INCREMENT," +
+                "status ENUM('INDEXING', 'INDEXED', 'FAILED') NOT NULL," +
+                "status_time DATETIME NOT NULL," +
+                "last_error TEXT," +
+                "url VARCHAR(255) NOT NULL," +
+                "`name` VARCHAR(255) NOT NULL," +
+                "PRIMARY KEY (id)," +
+                "UNIQUE KEY (`name`(255)));");
+    }
+
+    public static void dropSiteTable() throws SQLException {
+        getConnection().createStatement().execute("DROP TABLE IF EXISTS site");
+    }
     public static void addPageToBuffer(AtomicInteger pageCounter, Page page) throws SQLException {
         if (pageCounter.get() <= 0) {return;}
         int sizeBefore = pagesBuffer.size();

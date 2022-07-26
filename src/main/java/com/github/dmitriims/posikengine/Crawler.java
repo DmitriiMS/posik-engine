@@ -1,4 +1,4 @@
-package posikengine;
+package com.github.dmitriims.posikengine;
 
 import com.google.search.robotstxt.RobotsMatcher;
 import lombok.extern.slf4j.Slf4j;

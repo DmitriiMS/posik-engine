@@ -1,4 +1,4 @@
-package posikengine;
+package com.github.dmitriims.posikengine;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -6,8 +6,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;

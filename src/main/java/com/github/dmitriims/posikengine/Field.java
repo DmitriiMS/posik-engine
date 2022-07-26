@@ -1,4 +1,4 @@
-package posikengine;
+package com.github.dmitriims.posikengine;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,4 +1,4 @@
-package posikengine;
+package com.github.dmitriims.posikengine;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
