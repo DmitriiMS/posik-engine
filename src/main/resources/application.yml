@@ -2,13 +2,15 @@ spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
     url: jdbc:mysql://localhost:3306/search_engine
-    username: dms
-    password: password
+    username:
+    password:
   jpa:
     hibernate:
       ddl-auto: none
     generate-ddl: false
     show-sql: true
 sites:
-  url: https://dombulgakova.ru/
-  name: Булгаковский дом
+  - url: https://dombulgakova.ru/
+      name: Булгаковский дом
+userAgent: PosikEngineSearchBot
+homePage: /admin
