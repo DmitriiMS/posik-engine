@@ -16,7 +16,7 @@ import java.util.concurrent.ForkJoinPool;
 
 @Slf4j
 public class Main {
-    static String site = "https://dombulgakova.ru/";
+    static String site = "https://www.lutherancathedral.ru/";
 
     public static void main(String[] args) {
         try {

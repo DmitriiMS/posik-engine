@@ -62,7 +62,7 @@ public class DBConnection {
     public static void createPageTable() throws SQLException {
         getConnection().createStatement().execute("CREATE TABLE page(" +
                 "id INT NOT NULL AUTO_INCREMENT, " +
-                "site_id INT NOT NULL, " +
+                "site_id INT NOT NULL DEFAULT 1, " +
                 "`path` TEXT NOT NULL, " +
                 "code INT NOT NULL, " +
                 "content MEDIUMTEXT NOT NULL, " +
@@ -95,7 +95,7 @@ public class DBConnection {
     public static void createLemmaTable() throws SQLException {
         getConnection().createStatement().execute("CREATE TABLE lemma(" +
                 "id INT NOT NULL AUTO_INCREMENT, " +
-                "site_id INT NOT NULL, " +
+                "site_id INT NOT NULL DEFAULT 1, " +
                 "lemma VARCHAR(255) NOT NULL, " +
                 "frequency INT NOT NULL, " +
                 "PRIMARY KEY(id), " +
@@ -129,6 +129,9 @@ public class DBConnection {
                 "`name` VARCHAR(255) NOT NULL," +
                 "PRIMARY KEY (id)," +
                 "UNIQUE KEY (`name`(255)));");
+
+        getConnection().createStatement().execute("INSERT INTO site (status, status_time, last_error, url, `name`) " +
+                "VALUES ('INDEXED', CURRENT_TIMESTAMP, '', 'https://www.lutherancathedral.ru/', 'Собор Петра и Павла')");
     }
 
     public static void dropSiteTable() throws SQLException {
