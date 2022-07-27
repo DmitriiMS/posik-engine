@@ -1,10 +1,10 @@
 package com.github.dmitriims.posikengine.model;
 
 import lombok.Data;
-import org.checkerframework.common.aliasing.qual.Unique;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Entity
@@ -27,4 +27,10 @@ public class Site {
 
     @Column(name = "last_error")
     private String lastError;
+
+    @OneToMany(mappedBy = "site")
+    private Set<Page> pages;
+
+    @OneToMany(mappedBy = "site")
+    private Set<Lemma> lemmas;
 }

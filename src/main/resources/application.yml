@@ -2,12 +2,11 @@ spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
-    username: dms
-    password: password
+    username:
+    password:
   jpa:
     hibernate:
       dialect: org.hibernate.dialect.MySQL8Dialect
-      ddl-auto: none
       use-new-id-generator-mappings: false
     generate-ddl: false
     show-sql: true
@@ -23,4 +22,12 @@ search-engine-properties:
       -
         url: https://www.lutherancathedral.ru/
         name: Собор Петра и Павла
-
+    fields:
+      -
+        name: title
+        selector: title
+        weight: 1.0
+      -
+        name: body
+        selector: body
+        weight: 0.8
