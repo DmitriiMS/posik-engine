@@ -1,16 +1,26 @@
 spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/search_engine
-    username:
-    password:
+    url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
+    username: dms
+    password: password
   jpa:
     hibernate:
+      dialect: org.hibernate.dialect.MySQL8Dialect
       ddl-auto: none
+      use-new-id-generator-mappings: false
     generate-ddl: false
     show-sql: true
-sites:
-  - url: https://dombulgakova.ru/
-      name: Булгаковский дом
-userAgent: PosikEngineSearchBot
-homePage: /admin
+
+search-engine-properties:
+  user-agent: PosikEngineSearchBot
+  home-page: /admin
+  preload:
+    sites:
+      -
+        url: https://dombulgakova.ru/
+        name: Булгаковский дом
+      -
+        url: https://www.lutherancathedral.ru/
+        name: Собор Петра и Павла
+

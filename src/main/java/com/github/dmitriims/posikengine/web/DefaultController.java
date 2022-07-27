@@ -5,8 +5,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 public class DefaultController {
+    private final String homepage = "${search-engine-properties.home-page}";
 
-    @RequestMapping("/admin")
+    @RequestMapping(value =homepage)
     public String index() {
         return "index";
     }
