@@ -181,8 +181,12 @@ public class DBConnection {
         insertPageStatement.addBatch();
         insertPageStatement.executeBatch();
         ResultSet res = insertPageStatement.getGeneratedKeys();
+        if (res.next()) {
+            return res.getInt(1);
+        }
+        res = getConnection().createStatement().executeQuery("SELECT p.id as idid FROM page p WHERE p.`path`='" + p.getPath() +"'");
         res.next();
-        return res.getInt(1);
+        return res.getInt("idid");
     }
 
     public static int insertLemmaAndGetId(Lemma l) throws SQLException {

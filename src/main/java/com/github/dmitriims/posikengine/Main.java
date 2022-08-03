@@ -11,8 +11,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class Main {
@@ -35,7 +40,7 @@ public class Main {
                 pool.execute(crawler);
                 crawler.join();
                 DBConnection.flushBufferToDB();
-                log.info(site + " indexed");
+                log.info(site + " indexed at " + LocalDateTime.now().toString());
             }
 
 

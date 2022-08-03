@@ -8,8 +8,9 @@ spring:
     hibernate:
       dialect: org.hibernate.dialect.MySQL8Dialect
       use-new-id-generator-mappings: false
-    generate-ddl: false
-    show-sql: true
+      ddl-auto: create-drop
+    generate-ddl: true
+    show-sql: false
 
 search-engine-properties:
   user-agent: PosikEngineSearchBot

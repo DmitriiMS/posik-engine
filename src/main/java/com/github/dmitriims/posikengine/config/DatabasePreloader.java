@@ -1,5 +1,7 @@
 package com.github.dmitriims.posikengine.config;
 
+import com.github.dmitriims.posikengine.dto.FieldDTO;
+import com.github.dmitriims.posikengine.dto.SiteUrlAndNameDTO;
 import com.github.dmitriims.posikengine.model.Field;
 import com.github.dmitriims.posikengine.model.Site;
 import com.github.dmitriims.posikengine.model.Status;
@@ -22,16 +24,15 @@ import java.util.List;
 @Data
 public class DatabasePreloader {
 
-    private List<SiteProperties> sites;
-    private List<FieldProperties> fields;
+    private List<SiteUrlAndNameDTO> sites;
+    private List<FieldDTO> fields;
     private Logger log = LoggerFactory.getLogger(DatabasePreloader.class);
 
     @Bean
     @Autowired
     CommandLineRunner initDatabase(SiteRepository siteRepository, FieldRepository fieldRepository) {
         return args -> {
-            //DBConnection.createSiteTable();
-            for (SiteProperties sp : sites) {
+            for (SiteUrlAndNameDTO sp : sites) {
                 if (siteRepository.existsByUrl(sp.getUrl())) {
                     continue;
                 }
@@ -46,7 +47,7 @@ public class DatabasePreloader {
             }
 
 
-            for (FieldProperties fp : fields) {
+            for (FieldDTO fp : fields) {
                 if (fieldRepository.existsByName(fp.getName())) {
                     continue;
                 }

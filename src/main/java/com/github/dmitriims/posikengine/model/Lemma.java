@@ -1,12 +1,17 @@
 package com.github.dmitriims.posikengine.model;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 
 import javax.persistence.*;
+
 import java.util.Set;
 
+@Setter
+@Getter
 @Entity
-@Data
 public class Lemma {
 
     @Id
@@ -22,6 +27,14 @@ public class Lemma {
 
     private int frequency;
 
+    @Transient
+    private double rank;
+
     @OneToMany(mappedBy = "lemma")
+    @Cascade(CascadeType.DELETE)
     private Set<Index> indices;
+
+    public Lemma() {
+
+    }
 }

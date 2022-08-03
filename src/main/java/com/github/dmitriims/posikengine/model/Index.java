@@ -1,9 +1,15 @@
 package com.github.dmitriims.posikengine.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import javax.persistence.*;
 
+@Setter
+@Getter
 @Entity
-@Table(uniqueConstraints = {
+@Table(name = "`index`",
+        uniqueConstraints = {
         @UniqueConstraint(name = "UniquePageAndLemma", columnNames = {"page_id", "lemma_id"})
 })
 public class Index {
@@ -21,5 +27,9 @@ public class Index {
     private Lemma lemma;
 
     @Column(name = "`rank`")
-    private float rank;
+    private double rank;
+
+    public Index(){
+
+    }
 }

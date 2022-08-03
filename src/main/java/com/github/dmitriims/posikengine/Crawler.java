@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RecursiveAction;
@@ -52,7 +53,7 @@ public class Crawler extends RecursiveAction {
         Crawler.fields = fields;
 
         this.link = site;
-        log.info("created task");
+        log.info("created task at " + LocalDateTime.now().toString());
     }
 
     @Override
