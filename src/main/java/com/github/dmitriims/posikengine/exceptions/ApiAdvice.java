@@ -1,5 +1,6 @@
 package com.github.dmitriims.posikengine.exceptions;
 
+import com.github.dmitriims.posikengine.service.DatabaseService;
 import com.github.dmitriims.posikengine.service.IndexingService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -12,6 +13,8 @@ public class ApiAdvice {
 
     @Resource
     private IndexingService indexingService;
+    @Resource
+    private DatabaseService databaseService;
 
     @ExceptionHandler(AsyncIndexingStatusException.class)
     public ResponseEntity<String> handleAlreadyIndexingException(AsyncIndexingStatusException ise) {
@@ -22,7 +25,7 @@ public class ApiAdvice {
     public ResponseEntity<String> handleUnknownIndexingException(UnknownIndexingStatusException uise) {
         indexingService.setIndexing(false);
         indexingService.getIndexingMonitorTread().interrupt();
-        indexingService.getDatabaseService().setAllSiteStatusesToFailed("неизвестная ошибка индексирования");
+        databaseService.setAllSiteStatusesToFailed("неизвестная ошибка индексирования");
         return ResponseEntity.ok(uise.getMessage());
     }
 }

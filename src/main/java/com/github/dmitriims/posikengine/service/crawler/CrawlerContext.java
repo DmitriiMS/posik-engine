@@ -12,7 +12,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
-
 public class CrawlerContext {
     private Site site;
     private ForkJoinPool thisPool;

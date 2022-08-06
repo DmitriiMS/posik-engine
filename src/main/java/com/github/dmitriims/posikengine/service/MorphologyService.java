@@ -1,13 +1,7 @@
 package com.github.dmitriims.posikengine.service;
 
-import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
-import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
-import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -18,28 +12,15 @@ import java.nio.file.Path;
 import java.util.*;
 
 @Service
-@NoArgsConstructor
 public class MorphologyService {
 
+    @Resource
+    @Value("(?:\\.*\\s+\\-\\s+\\.*)|[^\\-а-яА-Яa-zA-Z\\d\\ё\\Ё]+")
     private String NOT_A_WORD_PATTERN;
+    @Resource(name = "russianMorphology")
     private LuceneMorphology russianLuceneMorph;
+    @Resource(name = "englishMorphology")
     private LuceneMorphology englishLuceneMorph;
-
-    @Autowired
-    public MorphologyService(
-            @Value("(?:\\.*\\s+\\-\\s+\\.*)|[^\\-а-яА-Яa-zA-Z\\d\\ё\\Ё]+")
-            String NOT_A_WORD_PATTERN,
-
-            @Qualifier("russianMorphology")
-            LuceneMorphology russianLuceneMorph,
-
-            @Qualifier("englishMorphology")
-            LuceneMorphology englishLuceneMorph)
-    {
-        this.NOT_A_WORD_PATTERN = NOT_A_WORD_PATTERN;
-        this.russianLuceneMorph = russianLuceneMorph;
-        this.englishLuceneMorph = englishLuceneMorph;
-    }
 
     public Map<String, Integer> getAndCountLemmasInString(String input) {
         Map<String, Integer> dictionaryWithCount = new TreeMap<>();

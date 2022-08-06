@@ -56,9 +56,7 @@ public class CrawlerService extends RecursiveAction {
                 }
             }
 
-
             Thread.sleep(context.getDelayGenerator().ints(500, 5000).findFirst().getAsInt());
-
 
             Connection.Response response = Jsoup.connect(link)
                     .userAgent(commonContext.getUserAgent())
@@ -131,7 +129,6 @@ public class CrawlerService extends RecursiveAction {
                 toUpdate.setRank(toUpdate.getRank() + tempLemma.getRank());
             }
         }
-
         return allLemmas;
     }
 

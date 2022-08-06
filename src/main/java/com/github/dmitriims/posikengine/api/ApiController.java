@@ -1,18 +1,10 @@
 package com.github.dmitriims.posikengine.api;
 
-import com.github.dmitriims.posikengine.dto.statistics.Detailed;
-import com.github.dmitriims.posikengine.dto.statistics.Statistics;
+import com.github.dmitriims.posikengine.dto.IndexingStatusResponse;
 import com.github.dmitriims.posikengine.dto.statistics.StatisticsResponse;
-import com.github.dmitriims.posikengine.dto.statistics.Total;
 import com.github.dmitriims.posikengine.exceptions.UnknownIndexingStatusException;
-import com.github.dmitriims.posikengine.model.Site;
-import com.github.dmitriims.posikengine.model.Status;
-import com.github.dmitriims.posikengine.repositories.LemmaRepository;
-import com.github.dmitriims.posikengine.repositories.PageRepository;
-import com.github.dmitriims.posikengine.repositories.SiteRepository;
-import com.github.dmitriims.posikengine.service.DatabaseService;
 import com.github.dmitriims.posikengine.service.IndexingService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.github.dmitriims.posikengine.service.StatisticsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,92 +13,68 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.io.IOException;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController("/api")
 public class ApiController {
 
-    SiteRepository siteRepository;
-    PageRepository pageRepository;
-    LemmaRepository lemmaRepository;
-
-    IndexingService indexingService;
-
     @Resource
-    DatabaseService databaseService;
-
-
-
-    @Autowired
-    public ApiController(SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository,
-            IndexingService indexingService) {
-        this.siteRepository = siteRepository;
-        this.pageRepository = pageRepository;
-        this.lemmaRepository = lemmaRepository;
-        this.indexingService = indexingService;
-    }
+    IndexingService indexingService;
+    @Resource
+    StatisticsService statisticsService;
 
     @GetMapping("/statistics")
-    public StatisticsResponse calculateStatistics() {
-        boolean isIndexing = siteRepository.existsByStatus(Status.INDEXING);
-        Total total = new Total(siteRepository.count(), pageRepository.count(), lemmaRepository.count(), isIndexing);
-        List<Detailed> detailed = new ArrayList<>();
-        List<Site> sites = siteRepository.findAll();
-        for (Site site : sites) {
-            Detailed d = new Detailed(site.getUrl(),
-                    site.getName(),
-                    site.getStatusTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-                    site.getLastError(),
-                    pageRepository.countBySite(site),
-                    lemmaRepository.countBySite(site));
-            detailed.add(d);
-        }
-        Statistics statistics = new Statistics(total, detailed);
-        return new StatisticsResponse(true, statistics);
+    public ResponseEntity<StatisticsResponse> calculateStatistics() {
+        //TODO: посмотреть, какие могут вылезти ошибки
+        return ResponseEntity.ok(statisticsService.getStatistics());
     }
 
     @GetMapping("/startIndexing")
-    public ResponseEntity<String> startIndexing() throws IOException {
+    public ResponseEntity<IndexingStatusResponse> startIndexing() throws IOException {
+        IndexingStatusResponse status = new IndexingStatusResponse(false, "Индексация уже запущена");
+
         if (indexingService.isIndexing()) {
-            return ResponseEntity.ok("{\"result\" : false, \"error\" : \"Индексация уже запущена\"}");
+            return ResponseEntity.ok(status);
         }
-        indexingService.startIndexing();
+        status = indexingService.startIndexing();
         if (indexingService.isIndexing()) {
-            return ResponseEntity.ok("{\"result\" : true}");
+            return ResponseEntity.ok(status);
         }
 
-        throw new UnknownIndexingStatusException("Неизвестная ошибка индексирования");
+        throw new UnknownIndexingStatusException(new IndexingStatusResponse(false, "Неизвестная ошибка индексирования"));
     }
 
     @GetMapping("/stopIndexing")
-    public ResponseEntity<String> stopIndexing() {
+    public ResponseEntity<IndexingStatusResponse> stopIndexing() {
+        IndexingStatusResponse status = new IndexingStatusResponse(false, "Индексация не запущена");
         if (!indexingService.isIndexing()) {
-            return ResponseEntity.ok("{\"result\" : false, \"error\" : \"Индексация не запущена\"}");
+            return ResponseEntity.ok(status);
         }
-        indexingService.stopIndexing();
+        status = indexingService.stopIndexing();
         if (!indexingService.isIndexing()) {
-            return ResponseEntity.ok("{\"result\" : true}");
+            return ResponseEntity.ok(status);
         }
 
-        throw new UnknownIndexingStatusException("{\"result\" : false, \"error\" : \"Неизвестная ошибка индексирования\"}");
+        throw new UnknownIndexingStatusException(new IndexingStatusResponse(false, "Неизвестная ошибка индексирования"));
     }
 
     @PostMapping("/indexPage")
-    public ResponseEntity<String> indexPage(@RequestParam String url) throws IOException {
+    public ResponseEntity<IndexingStatusResponse> indexPage(@RequestParam String url) throws IOException {
+        IndexingStatusResponse status = new IndexingStatusResponse(false, "Индексация уже запущена");
+
         if (indexingService.isIndexing()) {
-            return ResponseEntity.ok("{\"result\" : false, \"error\" : \"Индексация уже запущена\"}");
+            return ResponseEntity.ok(status);
         }
-        if (!indexingService.indexOnePage(url)) {
-            return ResponseEntity.ok("{\"result\" : false, \"error\" : \"Данная страница находится за пределами сайтов, указанных в конфигурационном файле\"}");
+
+        status = indexingService.indexOnePage(url);
+        if (!status.isResult()) {
+            return ResponseEntity.ok(status);
         }
 
         if (indexingService.isIndexing()) {
-            return ResponseEntity.ok("{\"result\" : true}");
+            return ResponseEntity.ok(status);
         }
 
-        throw new UnknownIndexingStatusException("{\"result\" : false, \"error\" : \"Неизвестная ошибка индексирования\"}");
+        throw new UnknownIndexingStatusException(new IndexingStatusResponse(false, "Неизвестная ошибка индексирования"));
     }
 
 }

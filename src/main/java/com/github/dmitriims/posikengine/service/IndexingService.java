@@ -1,10 +1,9 @@
 package com.github.dmitriims.posikengine.service;
 
+import com.github.dmitriims.posikengine.dto.IndexingStatusResponse;
 import com.github.dmitriims.posikengine.exceptions.AsyncIndexingStatusException;
 import com.github.dmitriims.posikengine.model.Field;
 import com.github.dmitriims.posikengine.model.Site;
-import com.github.dmitriims.posikengine.repositories.FieldRepository;
-import com.github.dmitriims.posikengine.repositories.SiteRepository;
 import com.github.dmitriims.posikengine.service.crawler.CrawlerContext;
 import com.github.dmitriims.posikengine.service.crawler.CrawlerService;
 import com.google.search.robotstxt.Parser;
@@ -13,7 +12,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -29,18 +27,16 @@ import java.util.concurrent.ForkJoinPool;
 @Service
 public class IndexingService {
 
-    private MorphologyService morphologyService;
+    @Resource
     private Parser robotsParser;
-    @Getter
+    @Resource
     private DatabaseService databaseService;
-    private SiteRepository siteRepository;
-    private FieldRepository fieldRepository;
-    private Map<Site, ForkJoinPool> containers;
-    @Getter
-    private Thread indexingMonitorTread;
-
     @Resource
     private CommonContext commonContext;
+
+    private Map<Site, ForkJoinPool> sitePools;
+    @Getter
+    private Thread indexingMonitorTread;
 
     private final Logger log = LoggerFactory.getLogger(IndexingService.class);
 
@@ -51,12 +47,12 @@ public class IndexingService {
         try {
             while (true) {
                 Thread.sleep(1000);
-                if (containers.isEmpty()) {
+                if (sitePools.isEmpty()) {
                     isIndexing = false;
                     break;
                 }
 
-                Iterator<Map.Entry<Site, ForkJoinPool>> it = containers.entrySet().iterator();
+                Iterator<Map.Entry<Site, ForkJoinPool>> it = sitePools.entrySet().iterator();
                 while (it.hasNext()) {
                     Map.Entry<Site, ForkJoinPool> pool = it.next();
                     if (pool.getValue().isQuiescent()) {
@@ -74,94 +70,71 @@ public class IndexingService {
         }
     };
 
-    @Autowired
-    public IndexingService(MorphologyService morphologyService,
-                           DatabaseService databaseService,
-                           SiteRepository siteRepository,
-                           Parser robotsParser,
-                           FieldRepository fieldRepository) {
-        this.morphologyService = morphologyService;
-        this.databaseService = databaseService;
-        this.siteRepository = siteRepository;
-        this.fieldRepository = fieldRepository;
-        this.robotsParser = robotsParser;
-    }
-
     public boolean isIndexing() {
         return isIndexing;
     }
 
-    public void startIndexing() throws IOException, AsyncIndexingStatusException {
+    public IndexingStatusResponse startIndexing() throws IOException, AsyncIndexingStatusException {
 
         if (isIndexing) {
-            throw new AsyncIndexingStatusException("Индексация уже запущена");
+            throw new AsyncIndexingStatusException(new IndexingStatusResponse(false, "Индексация уже запущена"));
         }
-
         isIndexing = true;
-        List<Site> sites = siteRepository.findAll();
-        List<Field> fields = fieldRepository.findAll();
-        containers = new HashMap<>();
 
+        List<Site> sites = databaseService.getSiteRepository().findAll();
+        List<Field> fields = databaseService.getFieldRepository().findAll();
+        sitePools = new HashMap<>();
 
         for (Site site : sites) {
-            ForkJoinPool pool = new ForkJoinPool();
-            String[] splitSite = site.getUrl().split("//|/");
-            String topLevelSite = splitSite[0] + "//" + splitSite[1] + "/";
-            RobotsMatcher robotsMatcher = (RobotsMatcher) robotsParser.parse(getRobotsTxt(topLevelSite));
-            CrawlerContext currentContext = new CrawlerContext(site, pool, Integer.MAX_VALUE, new HashSet<>(fields), robotsMatcher);
-            CrawlerService currentCrawler = new CrawlerService(currentContext, commonContext);
-            containers.put(site, pool);
-            containers.get(site).execute(currentCrawler);
-            log.info(pool.toString());
+            String topLevelSite = getTopLevelUrl(site.getUrl());
+            addStartIndexingSite(topLevelSite, Integer.MAX_VALUE, fields);
         }
 
         indexingMonitorTread = new Thread(indexingMonitor, "Indexing-monitor");
         indexingMonitorTread.start();
+
+        return new IndexingStatusResponse(true, null);
     }
 
-    public void stopIndexing() {
+    public IndexingStatusResponse stopIndexing() {
 
         if (!isIndexing) {
-            throw new AsyncIndexingStatusException("Индексация не запущена");
+            throw new AsyncIndexingStatusException(new IndexingStatusResponse(false, "Индексация уже остановлена"));
         }
 
         log.info("indexing is stopping, sending termination commands to workers");
-        for (Map.Entry<Site, ForkJoinPool> pool : containers.entrySet()) {
+        for (Map.Entry<Site, ForkJoinPool> pool : sitePools.entrySet()) {
             pool.getValue().shutdownNow();
         }
+
         try {
             indexingMonitorTread.join();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+
+        return new IndexingStatusResponse(true, null);
     }
 
-    //TODO: во всех методах проверять, что флаг индексации корректен. Может кто-то успел начать индексироваться до нас!
-    public boolean indexOnePage(String url) throws IOException {
+    public IndexingStatusResponse indexOnePage(String url) throws IOException {
 
-        containers = new HashMap<>();
+        if (isIndexing) {
+            throw new AsyncIndexingStatusException(new IndexingStatusResponse(false, "Индексация уже запущена"));
+        }
 
-        List<Field> fields = fieldRepository.findAll();
+        sitePools = new HashMap<>();
+        List<Field> fields = databaseService.getFieldRepository().findAll();
+        String topLevelSite = getTopLevelUrl(url);
 
-        String[] splitUrl = url.split("//|/");
-        String topLevelSiteFromUrl = splitUrl[0] + "//" + splitUrl[1] + "/";
-
-        if (!siteRepository.existsByUrl(topLevelSiteFromUrl)) {
-            return false;
+        if (!databaseService.getSiteRepository().existsByUrl(topLevelSite)) {
+            return new IndexingStatusResponse(false, "Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
         }
 
         isIndexing = true;
-        Site siteToIndex = siteRepository.findByUrl(topLevelSiteFromUrl);
-        ForkJoinPool pool = new ForkJoinPool();
-        RobotsMatcher robotsMatcher = (RobotsMatcher) robotsParser.parse(getRobotsTxt(topLevelSiteFromUrl));
-        CrawlerContext currentContext = new CrawlerContext(siteToIndex, pool, 1, new HashSet<>(fields), robotsMatcher);
-        CrawlerService crawler = new CrawlerService(currentContext, commonContext);
-        containers.put(siteToIndex, pool);
-        containers.get(siteToIndex).execute(crawler);
-
+        addStartIndexingSite(topLevelSite, 1, fields);
         indexingMonitorTread = new Thread(indexingMonitor, "Indexing-Monitor");
         indexingMonitorTread.start();
-        return true;
+        return new IndexingStatusResponse(true, null);
     }
 
     public static byte[] getRobotsTxt(String site) throws IOException {
@@ -186,6 +159,21 @@ public class IndexingService {
             throw new RuntimeException(e);
         }
         return robotsInBytes;
+    }
+
+    public String getTopLevelUrl(String url) {
+        String[] splitSite = url.split("//|/");
+        return splitSite[0] + "//" + splitSite[1] + "/";
+    }
+
+    public void addStartIndexingSite(String topLevelSite, int limit, List<Field> fields) throws IOException {
+        Site siteToIndex = databaseService.getSiteRepository().findByUrl(topLevelSite);
+        ForkJoinPool pool = new ForkJoinPool();
+        RobotsMatcher robotsMatcher = (RobotsMatcher) robotsParser.parse(getRobotsTxt(topLevelSite));
+        CrawlerContext currentContext = new CrawlerContext(siteToIndex, pool, limit, new HashSet<>(fields), robotsMatcher);
+        CrawlerService crawler = new CrawlerService(currentContext, commonContext);
+        sitePools.put(siteToIndex, pool);
+        sitePools.get(siteToIndex).execute(crawler);
     }
 
 }
