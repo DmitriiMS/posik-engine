@@ -81,9 +81,25 @@ public class DatabaseService {
     public Site setSiteStatusToIndexing(Site site) {
         Site siteToUpdate = siteRepository.findById(site.getId()).get();
         siteToUpdate.setStatus(Status.INDEXING);
+        siteToUpdate.setLastError("");
         siteToUpdate.setStatusTime(LocalDateTime.now());
         site = siteRepository.save(siteToUpdate);
         return site;
+    }
+
+    @Transactional
+    public void setSiteStatusToFailed(Site site, String error) {
+        Site siteToUpdate = siteRepository.findById(site.getId()).get();
+        siteToUpdate.setStatus(Status.FAILED);
+        siteToUpdate.setLastError(error);
+        siteToUpdate.setStatusTime(LocalDateTime.now());
+        siteRepository.save(siteToUpdate);
+    }
+
+    @Transactional
+    public void setAllSiteStatusesToFailed(String error) {
+        List<Site> sites = siteRepository.findAll();
+        sites.forEach(s -> setSiteStatusToFailed(s, error));
     }
 
     @Transactional

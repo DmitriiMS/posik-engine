@@ -4,6 +4,7 @@ import com.github.dmitriims.posikengine.dto.statistics.Detailed;
 import com.github.dmitriims.posikengine.dto.statistics.Statistics;
 import com.github.dmitriims.posikengine.dto.statistics.StatisticsResponse;
 import com.github.dmitriims.posikengine.dto.statistics.Total;
+import com.github.dmitriims.posikengine.exceptions.UnknownIndexingStatusException;
 import com.github.dmitriims.posikengine.model.Site;
 import com.github.dmitriims.posikengine.model.Status;
 import com.github.dmitriims.posikengine.repositories.LemmaRepository;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.io.IOException;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +57,7 @@ public class ApiController {
         for (Site site : sites) {
             Detailed d = new Detailed(site.getUrl(),
                     site.getName(),
-                    site.getStatusTime().toEpochSecond(ZoneOffset.UTC),
+                    site.getStatusTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
                     site.getLastError(),
                     pageRepository.countBySite(site),
                     lemmaRepository.countBySite(site));
@@ -75,8 +76,8 @@ public class ApiController {
         if (indexingService.isIndexing()) {
             return ResponseEntity.ok("{\"result\" : true}");
         }
-        //TODO: тут надо бросать эксепшн, перехватывать и сбрасывать.
-        return ResponseEntity.ok("{\"result\" : false, \"error\" : \"Неизвестная ошибка индексирования\"}");
+
+        throw new UnknownIndexingStatusException("Неизвестная ошибка индексирования");
     }
 
     @GetMapping("/stopIndexing")
@@ -88,8 +89,8 @@ public class ApiController {
         if (!indexingService.isIndexing()) {
             return ResponseEntity.ok("{\"result\" : true}");
         }
-        //TODO: тут надо бросать эксепшн, перехватывать и сбрасывать.
-        return ResponseEntity.ok("{\"result\" : false, \"error\" : \"Неизвестная ошибка индексирования\"}");
+
+        throw new UnknownIndexingStatusException("{\"result\" : false, \"error\" : \"Неизвестная ошибка индексирования\"}");
     }
 
     @PostMapping("/indexPage")
@@ -104,8 +105,8 @@ public class ApiController {
         if (indexingService.isIndexing()) {
             return ResponseEntity.ok("{\"result\" : true}");
         }
-        //TODO: тут надо бросать эксепшн, перехватывать и сбрасывать.
-        return ResponseEntity.ok("{\"result\" : false, \"error\" : \"Неизвестная ошибка индексирования\"}");
+
+        throw new UnknownIndexingStatusException("{\"result\" : false, \"error\" : \"Неизвестная ошибка индексирования\"}");
     }
 
 }

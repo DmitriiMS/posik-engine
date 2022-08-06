@@ -1,5 +1,6 @@
 package com.github.dmitriims.posikengine.service;
 
+import com.github.dmitriims.posikengine.exceptions.AsyncIndexingStatusException;
 import com.github.dmitriims.posikengine.model.Field;
 import com.github.dmitriims.posikengine.model.Site;
 import com.github.dmitriims.posikengine.repositories.FieldRepository;
@@ -8,7 +9,8 @@ import com.github.dmitriims.posikengine.service.crawler.CrawlerContext;
 import com.github.dmitriims.posikengine.service.crawler.CrawlerService;
 import com.google.search.robotstxt.Parser;
 import com.google.search.robotstxt.RobotsMatcher;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,15 +27,16 @@ import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 
 @Service
-@Data
 public class IndexingService {
 
     private MorphologyService morphologyService;
     private Parser robotsParser;
+    @Getter
     private DatabaseService databaseService;
     private SiteRepository siteRepository;
     private FieldRepository fieldRepository;
     private Map<Site, ForkJoinPool> containers;
+    @Getter
     private Thread indexingMonitorTread;
 
     @Resource
@@ -41,15 +44,13 @@ public class IndexingService {
 
     private final Logger log = LoggerFactory.getLogger(IndexingService.class);
 
+    @Setter
     boolean isIndexing = false;
 
     Runnable indexingMonitor = () -> {
         try {
             while (true) {
-
                 Thread.sleep(1000);
-
-
                 if (containers.isEmpty()) {
                     isIndexing = false;
                     break;
@@ -90,7 +91,12 @@ public class IndexingService {
         return isIndexing;
     }
 
-    public void startIndexing() throws IOException {
+    public void startIndexing() throws IOException, AsyncIndexingStatusException {
+
+        if (isIndexing) {
+            throw new AsyncIndexingStatusException("Индексация уже запущена");
+        }
+
         isIndexing = true;
         List<Site> sites = siteRepository.findAll();
         List<Field> fields = fieldRepository.findAll();
@@ -114,6 +120,11 @@ public class IndexingService {
     }
 
     public void stopIndexing() {
+
+        if (!isIndexing) {
+            throw new AsyncIndexingStatusException("Индексация не запущена");
+        }
+
         log.info("indexing is stopping, sending termination commands to workers");
         for (Map.Entry<Site, ForkJoinPool> pool : containers.entrySet()) {
             pool.getValue().shutdownNow();
@@ -138,6 +149,7 @@ public class IndexingService {
         if (!siteRepository.existsByUrl(topLevelSiteFromUrl)) {
             return false;
         }
+
         isIndexing = true;
         Site siteToIndex = siteRepository.findByUrl(topLevelSiteFromUrl);
         ForkJoinPool pool = new ForkJoinPool();
