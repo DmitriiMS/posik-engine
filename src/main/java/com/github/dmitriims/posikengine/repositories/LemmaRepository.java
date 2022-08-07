@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface LemmaRepository extends JpaRepository<Lemma, Long> {
     long countBySite(Site site);
     Lemma findByLemma(String lemma);
-    void deleteAllBySite_Id(long site_id);
+    void deleteAllBySite(Site site);
 }

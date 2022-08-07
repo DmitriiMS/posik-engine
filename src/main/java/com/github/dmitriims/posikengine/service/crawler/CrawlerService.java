@@ -20,8 +20,8 @@ import java.util.concurrent.RecursiveAction;
 
 public class CrawlerService extends RecursiveAction {
 
-    private final CommonContext commonContext;
-    private final CrawlerContext context;
+    private volatile CommonContext commonContext;
+    private volatile CrawlerContext context;
     protected String link;
 
     private final Logger log = LoggerFactory.getLogger(CrawlerService.class);
@@ -29,14 +29,15 @@ public class CrawlerService extends RecursiveAction {
     public CrawlerService(String link, CrawlerContext context, CommonContext commonContext) {
         this.commonContext = commonContext;
         this.context = context;
-        this.link = link;
+        this.link = decodeLink(link); //TODO: посмотреть, можно ли делать проверку
         context.getVisitedPages().add(link);
     }
 
     public CrawlerService(CrawlerContext context, CommonContext commonContext) {
         this.commonContext = commonContext;
         this.context = context;
-        this.link = context.getSite().getUrl();
+        this.link = decodeLink(context.getSite().getUrl());
+        context.getVisitedPages().add(link);
 
         log.info("started task for site " + context.getSite().getUrl());
     }
@@ -48,56 +49,30 @@ public class CrawlerService extends RecursiveAction {
                 return;
             }
 
-            if (context.getSite().getStatus().equals(Status.INDEXED)) {
-                log.info("cleaning up db for site " + context.getSite().getUrl());
-                synchronized (commonContext.getDatabaseService()) {
-                    commonContext.getDatabaseService().deleteSiteInformation(context.getSite());
-                    context.setSite(commonContext.getDatabaseService().setSiteStatusToIndexing(context.getSite()));
+            if (commonContext.isIndexing() &&
+                    (context.getSite().getStatus().equals(Status.INDEXED) || context.getSite().getLastError().equals("Индексация прервана пользователем"))) {
+                if (context.getNumberOfPagesToCrawl().get() == 1) {
+                    log.info("reindexing page " + link + " for site " + context.getSite().getUrl());
+                    synchronized (commonContext.getDatabaseService()) {
+                        if (commonContext.isIndexing()) {
+                            commonContext.getDatabaseService().getPageRepository().deleteBySite(context.getSite());
+                            context.setSite(commonContext.getDatabaseService().setSiteStatusToIndexing(context.getSite()));
+                        }
+                    }
+                } else {
+                    log.info("cleaning up db for site " + context.getSite().getUrl());
+                    if (commonContext.isIndexing()) {
+                        synchronized (commonContext.getDatabaseService()) {
+                            commonContext.getDatabaseService().deleteSiteInformation(context.getSite());
+                            context.setSite(commonContext.getDatabaseService().setSiteStatusToIndexing(context.getSite()));
+                        }
+                    }
                 }
             }
 
             Thread.sleep(context.getDelayGenerator().ints(500, 5000).findFirst().getAsInt());
 
-            Connection.Response response = Jsoup.connect(link)
-                    .userAgent(commonContext.getUserAgent())
-                    .referrer("http://www.google.com")
-                    .timeout(60 * 1000)
-                    .ignoreContentType(true)
-                    .ignoreHttpErrors(true)
-                    .execute();
-            String type = response.contentType();
-            if (!type.startsWith("text")) {
-                return;
-            }
-            int code = response.statusCode();
-            String content = response.body();
-
-            Page currentPage = new Page();
-            currentPage.setSite(context.getSite());
-            currentPage.setPath(link.replaceFirst(context.getSite().getUrl(), "/"));
-            currentPage.setCode(code);
-            currentPage.setContent(content);
-
-            Document document = response.parse();
-            List<Lemma> allLemmas = getAndRankAllLemmas(document);
-
-            if (context.getNumberOfPagesToCrawl().decrementAndGet() >= 0) {
-                synchronized (commonContext.getDatabaseService()) {
-                    commonContext.getDatabaseService().savePageToDataBase(context.getSite(), currentPage, allLemmas);
-
-                }
-            }
-
-            Set<String> filteredLinks = filterLinks(
-                    document.select("a[href]")
-                            .stream()
-                            .map(e -> {
-                                String link = e.attr("abs:href");
-                                link = link.replaceAll("%(?![\\da-fA-F]{2})", "%25");
-                                link = link.replaceAll("\\+", "%2B");
-                                return URLDecoder.decode(link, StandardCharsets.UTF_8);
-                            }).toList()
-            );
+            Set<String> filteredLinks = processOnePage(link);
             if (filteredLinks.size() != 0) {
                 invokeAll(filteredLinks.stream().map(link -> new CrawlerService(link, context, commonContext)).toList());
             }
@@ -106,6 +81,47 @@ public class CrawlerService extends RecursiveAction {
         } catch (InterruptedException ie) {
             log.warn(ie.toString());
         }
+    }
+
+    public Set<String> processOnePage(String url) throws IOException {
+        Connection.Response response = Jsoup.connect(link)
+                .userAgent(commonContext.getUserAgent())
+                .referrer("http://www.google.com")
+                .timeout(60 * 1000)
+                .ignoreContentType(true)
+                .ignoreHttpErrors(true)
+                .execute();
+        String type = response.contentType();
+        if (!type.startsWith("text")) {
+            return new HashSet<>();
+        }
+        int code = response.statusCode();
+        String content = response.body();
+
+        Page currentPage = new Page();
+        currentPage.setSite(context.getSite());
+        currentPage.setPath(link.replaceFirst(context.getSite().getUrl(), "/"));
+        currentPage.setCode(code);
+        currentPage.setContent(content);
+
+        Document document = response.parse();
+        List<Lemma> allLemmas = getAndRankAllLemmas(document);
+
+        if (context.getNumberOfPagesToCrawl().decrementAndGet() >= 0) {
+            synchronized (commonContext.getDatabaseService()) {
+                commonContext.getDatabaseService().savePageToDataBase(context.getSite(), currentPage, allLemmas);
+
+            }
+        }
+
+        return filterLinks(
+                document.select("a[href]")
+                        .stream()
+                        .map(e -> {
+                            String link = e.attr("abs:href");
+                            return decodeLink(link);
+                        }).toList()
+        );
     }
 
     public List<Lemma> getAndRankAllLemmas(Document doc) throws IOException {
@@ -152,5 +168,11 @@ public class CrawlerService extends RecursiveAction {
             }
         }
         return false;
+    }
+
+    private String decodeLink(String link) {
+        link = link.replaceAll("%(?![\\da-fA-F]{2})", "%25");
+        link = link.replaceAll("\\+", "%2B");
+        return URLDecoder.decode(link, StandardCharsets.UTF_8);
     }
 }

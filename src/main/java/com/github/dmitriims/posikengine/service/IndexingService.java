@@ -9,7 +9,6 @@ import com.github.dmitriims.posikengine.service.crawler.CrawlerService;
 import com.google.search.robotstxt.Parser;
 import com.google.search.robotstxt.RobotsMatcher;
 import lombok.Getter;
-import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -30,8 +29,6 @@ public class IndexingService {
     @Resource
     private Parser robotsParser;
     @Resource
-    private DatabaseService databaseService;
-    @Resource
     private CommonContext commonContext;
 
     private Map<Site, ForkJoinPool> sitePools;
@@ -40,22 +37,20 @@ public class IndexingService {
 
     private final Logger log = LoggerFactory.getLogger(IndexingService.class);
 
-    @Setter
-    boolean isIndexing = false;
-
     Runnable indexingMonitor = () -> {
         try {
             while (true) {
                 Thread.sleep(1000);
                 if (sitePools.isEmpty()) {
-                    isIndexing = false;
+                    commonContext.setIndexing(false);
                     break;
                 }
 
                 Iterator<Map.Entry<Site, ForkJoinPool>> it = sitePools.entrySet().iterator();
                 while (it.hasNext()) {
                     Map.Entry<Site, ForkJoinPool> pool = it.next();
-                    if (pool.getValue().isQuiescent()) {
+
+                    if (!pool.getValue().isShutdown() && pool.getValue().isQuiescent()) {
                         pool.getValue().shutdown();
                         synchronized (commonContext.getDatabaseService()) {
                             commonContext.getDatabaseService().setSiteStatusToIndexed(pool.getKey());
@@ -66,28 +61,32 @@ public class IndexingService {
                 }
             }
         } catch (InterruptedException e) {
-            log.info("indexing is halted, terminated Indexing-monitor");
+            log.info("indexing is halted during wait timer, terminated Indexing-monitor");
         }
     };
 
     public boolean isIndexing() {
-        return isIndexing;
+        return commonContext.isIndexing();
+    }
+
+    public void setIndexing(boolean flag) {
+        commonContext.setIndexing(flag);
     }
 
     public IndexingStatusResponse startIndexing() throws IOException, AsyncIndexingStatusException {
 
-        if (isIndexing) {
+        if (commonContext.isIndexing()) {
             throw new AsyncIndexingStatusException(new IndexingStatusResponse(false, "Индексация уже запущена"));
         }
-        isIndexing = true;
+        commonContext.setIndexing(true);
 
-        List<Site> sites = databaseService.getSiteRepository().findAll();
-        List<Field> fields = databaseService.getFieldRepository().findAll();
+        List<Site> sites = commonContext.getDatabaseService().getSiteRepository().findAll();
+        List<Field> fields = commonContext.getDatabaseService().getFieldRepository().findAll();
         sitePools = new HashMap<>();
 
         for (Site site : sites) {
             String topLevelSite = getTopLevelUrl(site.getUrl());
-            addStartIndexingSite(topLevelSite, Integer.MAX_VALUE, fields);
+            addSiteAndStartIndexing(topLevelSite, Integer.MAX_VALUE, fields);
         }
 
         indexingMonitorTread = new Thread(indexingMonitor, "Indexing-monitor");
@@ -97,14 +96,21 @@ public class IndexingService {
     }
 
     public IndexingStatusResponse stopIndexing() {
-
-        if (!isIndexing) {
+        if (!commonContext.isIndexing()) {
             throw new AsyncIndexingStatusException(new IndexingStatusResponse(false, "Индексация уже остановлена"));
         }
+        commonContext.setIndexing(false);
 
         log.info("indexing is stopping, sending termination commands to workers");
-        for (Map.Entry<Site, ForkJoinPool> pool : sitePools.entrySet()) {
+        Iterator<Map.Entry<Site, ForkJoinPool>> it = sitePools.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Site, ForkJoinPool> pool = it.next();
             pool.getValue().shutdownNow();
+            synchronized (commonContext.getDatabaseService()) {
+                commonContext.getDatabaseService().setSiteStatusToFailed(pool.getKey(), "Индексация прервана пользователем");
+            }
+            log.info("indexing interrupted by user for site " + pool.getKey().getUrl());
+            it.remove();
         }
 
         try {
@@ -118,20 +124,20 @@ public class IndexingService {
 
     public IndexingStatusResponse indexOnePage(String url) throws IOException {
 
-        if (isIndexing) {
+        if (commonContext.isIndexing()) {
             throw new AsyncIndexingStatusException(new IndexingStatusResponse(false, "Индексация уже запущена"));
         }
 
         sitePools = new HashMap<>();
-        List<Field> fields = databaseService.getFieldRepository().findAll();
+        List<Field> fields = commonContext.getDatabaseService().getFieldRepository().findAll();
         String topLevelSite = getTopLevelUrl(url);
 
-        if (!databaseService.getSiteRepository().existsByUrl(topLevelSite)) {
+        if (!commonContext.getDatabaseService().getSiteRepository().existsByUrl(topLevelSite)) {
             return new IndexingStatusResponse(false, "Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
         }
 
-        isIndexing = true;
-        addStartIndexingSite(topLevelSite, 1, fields);
+        commonContext.setIndexing(true);
+        addOnePageAndIndex(topLevelSite, url, fields);
         indexingMonitorTread = new Thread(indexingMonitor, "Indexing-Monitor");
         indexingMonitorTread.start();
         return new IndexingStatusResponse(true, null);
@@ -166,14 +172,28 @@ public class IndexingService {
         return splitSite[0] + "//" + splitSite[1] + "/";
     }
 
-    public void addStartIndexingSite(String topLevelSite, int limit, List<Field> fields) throws IOException {
-        Site siteToIndex = databaseService.getSiteRepository().findByUrl(topLevelSite);
+    public void addSiteAndStartIndexing(String topLevelSite, int limit, List<Field> fields) throws IOException {
+        CrawlerContext currentContext = generateCrawlerContext(topLevelSite, limit, fields);
+        CrawlerService crawler = new CrawlerService(currentContext, commonContext);
+        launchIndexing(currentContext, crawler);
+    }
+
+    public void addOnePageAndIndex(String topLevelSite, String url, List<Field> fields) throws IOException {
+        CrawlerContext currentContext = generateCrawlerContext(topLevelSite, 1, fields);
+        CrawlerService crawler = new CrawlerService(url, currentContext, commonContext);
+        launchIndexing(currentContext, crawler);
+    }
+
+    private void launchIndexing(CrawlerContext context, CrawlerService crawler) {
+        sitePools.put(context.getSite(), context.getThisPool());
+        sitePools.get(context.getSite()).execute(crawler);
+    }
+
+    public CrawlerContext generateCrawlerContext (String topLevelSite, int limit, List<Field> fields) throws IOException {
+        Site siteToIndex = commonContext.getDatabaseService().getSiteRepository().findByUrl(topLevelSite);
         ForkJoinPool pool = new ForkJoinPool();
         RobotsMatcher robotsMatcher = (RobotsMatcher) robotsParser.parse(getRobotsTxt(topLevelSite));
-        CrawlerContext currentContext = new CrawlerContext(siteToIndex, pool, limit, new HashSet<>(fields), robotsMatcher);
-        CrawlerService crawler = new CrawlerService(currentContext, commonContext);
-        sitePools.put(siteToIndex, pool);
-        sitePools.get(siteToIndex).execute(crawler);
+        return new CrawlerContext(siteToIndex, pool, limit, new HashSet<>(fields), robotsMatcher);
     }
 
 }

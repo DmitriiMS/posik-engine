@@ -17,4 +17,6 @@ public class CommonContext {
     private List<String> FORBIDDEN_COMPONENTS;
     @Resource
     private MorphologyService morphologyService;
+
+    private boolean isIndexing = false;
 }

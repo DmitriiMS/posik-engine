@@ -108,8 +108,8 @@ public class DatabaseService {
         for(long id : test) {
             indexRepository.deleteAllByPage_Id(id);
         }
-        lemmaRepository.deleteAllBySite_Id(site.getId());
-        pageRepository.deleteAllBySite_Id(site.getId());
+        lemmaRepository.deleteAllBySite(site);
+        pageRepository.deleteAllBySite(site);
     }
 
 }
