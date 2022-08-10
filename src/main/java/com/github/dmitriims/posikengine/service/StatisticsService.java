@@ -34,6 +34,7 @@ public class StatisticsService {
         for (Site site : sites) {
             Detailed d = new Detailed(site.getUrl(),
                     site.getName(),
+                    site.getStatus(),
                     site.getStatusTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
                     site.getLastError(),
                     pr.countBySite(site),
