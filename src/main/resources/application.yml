@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
+    username:
+    password:
+  jpa:
+    hibernate:
+      dialect: org.hibernate.dialect.MySQL8Dialect
+      use-new-id-generator-mappings: false
+      ddl-auto: create-drop
+    generate-ddl: true
+    show-sql: false
+
+search-engine-properties:
+  user-agent: PosikEngineSearchBot
+  home-page: /admin
+  preload:
+    sites:
+      -
+        url: https://dombulgakova.ru/
+        name: Булгаковский дом
+      -
+        url: https://www.lutherancathedral.ru/
+        name: Собор Петра и Павла
+    fields:
+      -
+        name: title
+        selector: title
+        weight: 1.0
+      -
+        name: body
+        selector: body
+        weight: 0.8

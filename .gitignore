@@ -2,7 +2,9 @@
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 PosikEngine_log.log
-./target/
+.target/
+.idea/**/dataSources.xml
+.idea/**/sqldialects.xml
 
 # User-specific stuff
 .idea/**/workspace.xml
