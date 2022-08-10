@@ -1,7 +1,7 @@
 package com.github.dmitriims.posikengine.service;
 
 import com.github.dmitriims.posikengine.dto.IndexingStatusResponse;
-import com.github.dmitriims.posikengine.exceptions.AsyncIndexingStatusException;
+import com.github.dmitriims.posikengine.exceptions.IndexingStatusException;
 import com.github.dmitriims.posikengine.model.Field;
 import com.github.dmitriims.posikengine.model.Site;
 import com.github.dmitriims.posikengine.service.crawler.CrawlerContext;
@@ -73,10 +73,10 @@ public class IndexingService {
         commonContext.setIndexing(flag);
     }
 
-    public IndexingStatusResponse startIndexing() throws IOException, AsyncIndexingStatusException {
+    public IndexingStatusResponse startIndexing() throws IOException, IndexingStatusException {
 
         if (commonContext.isIndexing()) {
-            throw new AsyncIndexingStatusException(new IndexingStatusResponse(false, "Индексация уже запущена"));
+            throw new IndexingStatusException("Индексация уже запущена");
         }
         commonContext.setIndexing(true);
 
@@ -97,7 +97,7 @@ public class IndexingService {
 
     public IndexingStatusResponse stopIndexing() {
         if (!commonContext.isIndexing()) {
-            throw new AsyncIndexingStatusException(new IndexingStatusResponse(false, "Индексация уже остановлена"));
+            throw new IndexingStatusException("Индексация уже остановлена");
         }
         commonContext.setIndexing(false);
 
@@ -125,7 +125,7 @@ public class IndexingService {
     public IndexingStatusResponse indexOnePage(String url) throws IOException {
 
         if (commonContext.isIndexing()) {
-            throw new AsyncIndexingStatusException(new IndexingStatusResponse(false, "Индексация уже запущена"));
+            throw new IndexingStatusException("Индексация уже запущена");
         }
 
         sitePools = new HashMap<>();
@@ -133,7 +133,7 @@ public class IndexingService {
         String topLevelSite = getTopLevelUrl(url);
 
         if (!commonContext.getDatabaseService().getSiteRepository().existsByUrl(topLevelSite)) {
-            return new IndexingStatusResponse(false, "Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
+            throw new IndexingStatusException("Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
         }
 
         commonContext.setIndexing(true);

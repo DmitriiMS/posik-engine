@@ -5,6 +5,7 @@ import com.github.dmitriims.posikengine.dto.PageDTO;
 import com.github.dmitriims.posikengine.dto.SearchRequest;
 import com.github.dmitriims.posikengine.dto.SearchResponse;
 import com.github.dmitriims.posikengine.dto.statistics.StatisticsResponse;
+import com.github.dmitriims.posikengine.exceptions.IndexingStatusException;
 import com.github.dmitriims.posikengine.exceptions.SearchException;
 import com.github.dmitriims.posikengine.exceptions.UnknownIndexingStatusException;
 import com.github.dmitriims.posikengine.service.IndexingService;
@@ -37,51 +38,41 @@ public class ApiController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity<IndexingStatusResponse> startIndexing() throws IOException {
-        IndexingStatusResponse status = new IndexingStatusResponse(false, "Индексация уже запущена");
-
         if (indexingService.isIndexing()) {
-            return ResponseEntity.ok(status);
+            throw new IndexingStatusException("Индексация уже запущена");
         }
-        status = indexingService.startIndexing();
+        IndexingStatusResponse status = indexingService.startIndexing();
         if (indexingService.isIndexing()) {
             return ResponseEntity.ok(status);
         }
 
-        throw new UnknownIndexingStatusException(new IndexingStatusResponse(false, "Неизвестная ошибка индексирования"));
+        throw new UnknownIndexingStatusException("Неизвестная ошибка индексирования");
     }
 
     @GetMapping("/stopIndexing")
     public ResponseEntity<IndexingStatusResponse> stopIndexing() {
-        IndexingStatusResponse status = new IndexingStatusResponse(false, "Индексация не запущена");
         if (!indexingService.isIndexing()) {
-            return ResponseEntity.ok(status);
+            throw new IndexingStatusException("Индексация не запущена");
         }
-        status = indexingService.stopIndexing();
+        IndexingStatusResponse status = indexingService.stopIndexing();
         if (!indexingService.isIndexing()) {
             return ResponseEntity.ok(status);
         }
 
-        throw new UnknownIndexingStatusException(new IndexingStatusResponse(false, "Неизвестная ошибка индексирования"));
+        throw new UnknownIndexingStatusException("Неизвестная ошибка индексирования");
     }
 
     @PostMapping("/indexPage")
-    public ResponseEntity<IndexingStatusResponse> indexPage(@RequestParam String url) throws IOException { //TODO: обработка ошибок валидации
-        IndexingStatusResponse status = new IndexingStatusResponse(false, "Индексация уже запущена");
-
+    public ResponseEntity<IndexingStatusResponse> indexPage(@RequestParam String url) throws IOException {
+        if (indexingService.isIndexing()) {
+            throw new IndexingStatusException("Индексация уже запущена");
+        }
+        IndexingStatusResponse status = indexingService.indexOnePage(url);
         if (indexingService.isIndexing()) {
             return ResponseEntity.ok(status);
         }
 
-        status = indexingService.indexOnePage(url);
-        if (!status.isResult()) {
-            return ResponseEntity.ok(status);
-        }
-
-        if (indexingService.isIndexing()) {
-            return ResponseEntity.ok(status);
-        }
-
-        throw new UnknownIndexingStatusException(new IndexingStatusResponse(false, "Неизвестная ошибка индексирования"));
+        throw new UnknownIndexingStatusException("Неизвестная ошибка индексирования");
     }
 
     @GetMapping("/search") //TODO: перейти к валидации полей от проверок в методе

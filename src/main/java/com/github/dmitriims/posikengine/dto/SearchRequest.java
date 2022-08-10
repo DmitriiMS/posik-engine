@@ -14,6 +14,6 @@ public class SearchRequest {
     private String query;
     @NotEmpty
     private String site;
-    private int offset = 0;
-    private int limit = 20;
+    private int offset;
+    private int limit;
 }
