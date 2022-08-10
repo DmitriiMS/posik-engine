@@ -1,6 +1,5 @@
 package com.github.dmitriims.posikengine.service;
 
-import com.github.dmitriims.posikengine.MorphologyUtils;
 import com.github.dmitriims.posikengine.dto.PageDTO;
 import com.github.dmitriims.posikengine.dto.SearchRequest;
 import com.github.dmitriims.posikengine.exceptions.SearchException;
@@ -44,7 +43,7 @@ public class SearchService {
             sitesToSearch = commonContext.getDatabaseService().getSiteByUrl(request.getSite());
         }
 
-        searchWordsNormalForms = MorphologyUtils.getAndCountLemmasInString(request.getQuery()).keySet().toArray(new String[0]);
+        searchWordsNormalForms = commonContext.getMorphologyService().getAndCountLemmasInString(request.getQuery()).keySet().toArray(new String[0]);
         if (searchWordsNormalForms.length == 0) {
             throw new SearchException("Не удалось выделить леммы для поиска из запроса");
         }
@@ -127,12 +126,12 @@ public class SearchService {
     public Map<String, Integer> getIndexMap(String text, String[] searchWordsNormalForms) {
         Map<String, Integer> result = new TreeMap<>();
         Set<String> normalizedSearchTerms = new HashSet<>(List.of(searchWordsNormalForms));
-        String[] words = MorphologyUtils.splitStringToLowercaseWords(text);
+        String[] words = commonContext.getMorphologyService().splitStringToLowercaseWords(text);
         for (String word : words) {
             if(word.isBlank()) {
                 continue;
             }
-            List<String> normWords = MorphologyUtils.getNormalFormOfAWord(word);
+            List<String> normWords = commonContext.getMorphologyService().getNormalFormOfAWord(word);
             for (String normWord : normWords) {
                 if (normalizedSearchTerms.contains(normWord)) {
                     int index = findIndexOfWord(text, word);
