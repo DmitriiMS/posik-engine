@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Component
-public class CommonContext {
+public class CommonContext { //TODO: как можно оптимизировать? Не все поля везде нужны
     @Resource(name = "userAgent")
     private String userAgent;
     @Resource(name = "databaseService")

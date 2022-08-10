@@ -37,4 +37,14 @@ public class Lemma {
     public Lemma() {
 
     }
+
+    @Override
+    public String toString() {
+        return "Lemma{" +
+                "id=" + id +
+                ", site=" + site +
+                ", lemma='" + lemma + '\'' +
+                ", frequency=" + frequency +
+                '}';
+    }
 }

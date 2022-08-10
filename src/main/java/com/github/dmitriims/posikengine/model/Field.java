@@ -21,4 +21,14 @@ public class Field {
     private String selector;
 
     private double weight;
+
+    @Override
+    public String toString() {
+        return "Field{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", selector='" + selector + '\'' +
+                ", weight=" + weight +
+                '}';
+    }
 }

@@ -19,6 +19,7 @@ public class Page {
         this.lemmas = lemmas;
     }
 
+    //TODO: перенести кастомную логику сравнения в новый класс
     public boolean equals(final Object o) {
         if (o == this) return true;
         if (!(o instanceof Page)) return false;

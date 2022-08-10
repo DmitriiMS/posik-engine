@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class Detailed {
     private String url;
     private String name;
+    //TODO: протерялся статус!
     private long statusTime;
     private String error;
     private long pages;

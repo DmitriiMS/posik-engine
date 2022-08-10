@@ -11,7 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Data
@@ -33,7 +36,6 @@ public class DatabaseService {
         this.indexRepository = indexRepository;
         this.fieldRepository = fieldRepository;
     }
-
 
     @Transactional
     public void savePageToDataBase(Site site, Page page, List<Lemma> lemmas) {
@@ -78,6 +80,18 @@ public class DatabaseService {
     }
 
     @Transactional
+    public List<Site> getAllSites() {
+        return siteRepository.findAll();
+    }
+
+    @Transactional
+    public List<Site> getSiteByUrl(String url) {
+        return new ArrayList<>(){{
+            add(siteRepository.findByUrl(url));
+        }};
+    }
+
+    @Transactional
     public Site setSiteStatusToIndexing(Site site) {
         Site siteToUpdate = siteRepository.findById(site.getId()).get();
         siteToUpdate.setStatus(Status.INDEXING);
@@ -110,6 +124,22 @@ public class DatabaseService {
         }
         lemmaRepository.deleteAllBySite(site);
         pageRepository.deleteAllBySite(site);
+    }
+
+    @Transactional
+    public List<Lemma> filterPopularLemmasOut(List<Site> sites, List<String> lemmas, double threshold) {
+        return lemmaRepository.filterVeryPopularLemmas(sites, lemmas, threshold);
+    }
+
+    @Transactional
+    public List<Page> getPagesWithLemmas(List<Long> lemmasIds, List<Site> sites) {
+        List<Long> pagesIds = pageRepository.findAllBySiteIn(sites)
+                .stream().map(Page::getId).collect(Collectors.toList());
+        for (Long lemmaId : lemmasIds) {
+            pagesIds = indexRepository.findAllByPage_IdInAndLemma_Id(pagesIds, lemmaId)
+                    .stream().map(i -> i.getPage().getId()).collect(Collectors.toList());
+        }
+        return pageRepository.findAllByIdIn(pagesIds);
     }
 
 }

@@ -38,4 +38,14 @@ public class Page {
 
     public Page() {
     }
+
+    @Override
+    public String toString() {
+        return "Page{" +
+                "id=" + id +
+                ", site=" + site +
+                ", path='" + path + '\'' +
+                ", code=" + code +
+                '}';
+    }
 }

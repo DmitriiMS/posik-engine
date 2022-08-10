@@ -44,4 +44,16 @@ public class Site {
     public Site() {
 
     }
+
+    @Override
+    public String toString() {
+        return "Site{" +
+                "id=" + id +
+                ", url='" + url + '\'' +
+                ", name='" + name + '\'' +
+                ", status=" + status +
+                ", statusTime=" + statusTime +
+                ", lastError='" + lastError + '\'' +
+                '}';
+    }
 }
