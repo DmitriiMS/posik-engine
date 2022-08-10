@@ -8,20 +8,20 @@ spring:
     hibernate:
       dialect: org.hibernate.dialect.MySQL8Dialect
       use-new-id-generator-mappings: false
-      ddl-auto: create-drop
+      ddl-auto: create
     generate-ddl: true
     show-sql: false
 
 search-engine-properties:
-  user-agent: PosikEngineSearchBot
+  user-agent: PösikEngineSearchBot
   home-page: /admin
   preload:
     sites:
       -
-        url: https://dombulgakova.ru/
-        name: Булгаковский дом
+        url: https://nikoartgallery.com
+        name: Галерея искусств Niko
       -
-        url: https://www.lutherancathedral.ru/
+        url: https://www.lutherancathedral.ru
         name: Собор Петра и Павла
     fields:
       -

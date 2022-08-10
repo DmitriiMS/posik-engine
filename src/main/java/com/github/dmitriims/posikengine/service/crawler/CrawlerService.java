@@ -17,7 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.RecursiveAction;
 
-
 public class CrawlerService extends RecursiveAction {
 
     private volatile CommonContext commonContext;
@@ -100,7 +99,8 @@ public class CrawlerService extends RecursiveAction {
 
         Page currentPage = new Page();
         currentPage.setSite(context.getSite());
-        currentPage.setPath(link.replaceFirst(context.getSite().getUrl(), "/"));
+        currentPage.setPath(link.replaceFirst(context.getSite().getUrl(),
+                link.equals(context.getSite().getUrl()) ? "/" : ""));
         currentPage.setCode(code);
         currentPage.setContent(content);
 

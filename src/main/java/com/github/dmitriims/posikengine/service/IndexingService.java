@@ -145,7 +145,7 @@ public class IndexingService {
 
     public static byte[] getRobotsTxt(String site) throws IOException {
         byte[] robotsInBytes;
-        URL robots = new URL(site + "robots.txt");
+        URL robots = new URL(site + "/robots.txt");
 
         HttpURLConnection urlConnection = (HttpURLConnection) robots.openConnection();
         urlConnection.setRequestMethod("HEAD");
@@ -169,7 +169,7 @@ public class IndexingService {
 
     public String getTopLevelUrl(String url) {
         String[] splitSite = url.split("//|/");
-        return splitSite[0] + "//" + splitSite[1] + "/";
+        return splitSite[0] + "//" + splitSite[1];
     }
 
     public void addSiteAndStartIndexing(String topLevelSite, int limit, List<Field> fields) throws IOException {
