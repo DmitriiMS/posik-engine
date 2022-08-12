@@ -73,11 +73,7 @@
             <artifactId>lombok</artifactId>
             <version>1.18.24</version>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.36</version>
-        </dependency>
+
         <!-- локальная зависимость от robots-txt TODO: вывести к нормальной внешней зависимости -->
         <dependency>
             <groupId>com.google.search</groupId>

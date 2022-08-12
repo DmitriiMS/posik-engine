@@ -12,6 +12,14 @@ spring:
     generate-ddl: true
     show-sql: false
 
+logging:
+  file:
+    name: PosikEngine_log.log
+  pattern:
+    dateformat: yyyy-MM-dd HH:mm:ss:SSS
+  level:
+    root: info
+
 search-engine-properties:
   user-agent: PösikEngineSearchBot
   home-page: /admin
