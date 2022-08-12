@@ -2,7 +2,7 @@ package com.github.dmitriims.posikengine.service.crawler;
 
 import com.github.dmitriims.posikengine.model.Field;
 import com.github.dmitriims.posikengine.model.Site;
-import com.google.search.robotstxt.RobotsMatcher;
+import crawlercommons.robots.BaseRobotRules;
 import lombok.Data;
 
 import java.util.Random;
@@ -19,13 +19,13 @@ public class CrawlerContext {
     private AtomicInteger numberOfPagesToCrawl;
     private Set<Field> fields;
     private Random delayGenerator;
-    private RobotsMatcher robotsMatcher;
+    private BaseRobotRules robotsRules;
 
-    public CrawlerContext(Site site, ForkJoinPool thisPool, int pagesToCrawlLimit, Set<Field> fields, RobotsMatcher robotsMatcher) {
+    public CrawlerContext(Site site, ForkJoinPool thisPool, int pagesToCrawlLimit, Set<Field> fields, BaseRobotRules robotsRules) {
         this.site = site;
         this.thisPool = thisPool;
         this.fields = fields;
-        this.robotsMatcher = robotsMatcher;
+        this.robotsRules = robotsRules;
 
         this.visitedPages = ConcurrentHashMap.newKeySet();
         this.numberOfPagesToCrawl = new AtomicInteger(pagesToCrawlLimit);

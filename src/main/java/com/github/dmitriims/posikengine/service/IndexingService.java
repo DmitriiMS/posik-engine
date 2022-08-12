@@ -6,8 +6,8 @@ import com.github.dmitriims.posikengine.model.Field;
 import com.github.dmitriims.posikengine.model.Site;
 import com.github.dmitriims.posikengine.service.crawler.CrawlerContext;
 import com.github.dmitriims.posikengine.service.crawler.CrawlerService;
-import com.google.search.robotstxt.Parser;
-import com.google.search.robotstxt.RobotsMatcher;
+import crawlercommons.robots.BaseRobotRules;
+import crawlercommons.robots.SimpleRobotRulesParser;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ import java.util.concurrent.ForkJoinPool;
 public class IndexingService {
 
     @Resource
-    private Parser robotsParser;
+    private SimpleRobotRulesParser robotsParser;
     @Resource
     private CommonContext commonContext;
 
@@ -192,8 +192,8 @@ public class IndexingService {
     public CrawlerContext generateCrawlerContext (String topLevelSite, int limit, List<Field> fields) throws IOException {
         Site siteToIndex = commonContext.getDatabaseService().getSiteRepository().findByUrl(topLevelSite);
         ForkJoinPool pool = new ForkJoinPool();
-        RobotsMatcher robotsMatcher = (RobotsMatcher) robotsParser.parse(getRobotsTxt(topLevelSite));
-        return new CrawlerContext(siteToIndex, pool, limit, new HashSet<>(fields), robotsMatcher);
+        BaseRobotRules robotRules = robotsParser.parseContent(topLevelSite + "/robots.txt", getRobotsTxt(topLevelSite), "text/plain", commonContext.getUserAgent());
+        return new CrawlerContext(siteToIndex, pool, limit, new HashSet<>(fields), robotRules);
     }
 
 }

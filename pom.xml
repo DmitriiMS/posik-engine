@@ -7,10 +7,12 @@
     <groupId>com.github.dmitriims</groupId>
     <artifactId>posik-engine</artifactId>
     <version>1.1</version>
+    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <start-class>com.github.dmitriims.posikengine.posikEngineApplication</start-class>
     </properties>
 
     <parent>
@@ -74,13 +76,10 @@
             <version>1.18.24</version>
         </dependency>
 
-        <!-- локальная зависимость от robots-txt TODO: вывести к нормальной внешней зависимости -->
         <dependency>
-            <groupId>com.google.search</groupId>
-            <artifactId>robotstxt</artifactId>
-            <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/lib/robotstxt-java-1.0-SNAPSHOT-jar-with-dependencies.jar</systemPath>
+            <groupId>com.github.crawler-commons</groupId>
+            <artifactId>crawler-commons</artifactId>
+            <version>1.3</version>
         </dependency>
         <!-- морфология -->
         <dependency>
@@ -112,6 +111,7 @@
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -129,7 +129,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.github.dmitriims.posikengine.Main</mainClass>
+                            <mainClass>com.github.dmitriims.posikengine.posikEngineApplication</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

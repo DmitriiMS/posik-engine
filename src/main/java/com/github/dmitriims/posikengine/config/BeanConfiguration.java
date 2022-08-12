@@ -1,8 +1,6 @@
 package com.github.dmitriims.posikengine.config;
 
-import com.google.search.robotstxt.Parser;
-import com.google.search.robotstxt.RobotsParseHandler;
-import com.google.search.robotstxt.RobotsParser;
+import crawlercommons.robots.SimpleRobotRulesParser;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
@@ -28,8 +26,8 @@ public class BeanConfiguration {
     }
 
     @Bean
-    public Parser robotsParser() {
-        return new RobotsParser(new RobotsParseHandler());
+    public SimpleRobotRulesParser robotsParser() {
+        return new SimpleRobotRulesParser();
     }
 
     @Bean(name = "forbiddenList")

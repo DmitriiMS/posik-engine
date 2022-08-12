@@ -152,7 +152,7 @@ public class CrawlerService extends RecursiveAction {
         Set<String> filtered = new HashSet<>();
         for (String l : links) {
             if (context.getVisitedPages().contains(l) || !l.startsWith(context.getSite().getUrl()) || containsForbiddenComponents(l) ||
-                    !context.getRobotsMatcher().singleAgentAllowedByRobots(commonContext.getUserAgent(), l)) {
+                    !context.getRobotsRules().isAllowed(l)) {
                 context.getVisitedPages().add(l);
                 continue;
             }
