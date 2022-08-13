@@ -153,9 +153,6 @@ public class CrawlerService extends RecursiveAction {
         for (String l : links) {
             if (context.getVisitedPages().contains(l) || !l.startsWith(context.getSite().getUrl()) || containsForbiddenComponents(l) ||
                     !context.getRobotsRules().isAllowed(l)) {
-                if (!context.getRobotsRules().isAllowed(l)) {
-                    log.info("link is not allowed by robots.txt: " + l);
-                }
                 context.getVisitedPages().add(l);
                 continue;
             }
