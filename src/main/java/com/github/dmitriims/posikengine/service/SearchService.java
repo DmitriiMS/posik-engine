@@ -40,7 +40,9 @@ public class SearchService {
         if (request.getSite() == null) {
             sitesToSearch = commonContext.getDatabaseService().getAllSites();
         } else {
-            sitesToSearch = commonContext.getDatabaseService().getSiteByUrl(request.getSite());
+            sitesToSearch = new ArrayList<>(){{
+                add(commonContext.getDatabaseService().getSiteByUrl(request.getSite()));
+            }};
         }
 
         searchWordsNormalForms = commonContext.getMorphologyService().getAndCountLemmasInString(request.getQuery()).keySet().toArray(new String[0]);

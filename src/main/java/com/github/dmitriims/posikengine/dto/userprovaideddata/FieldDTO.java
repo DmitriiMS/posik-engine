@@ -1,4 +1,4 @@
-package com.github.dmitriims.posikengine.dto;
+package com.github.dmitriims.posikengine.dto.userprovaideddata;
 
 import lombok.Data;
 

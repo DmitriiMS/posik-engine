@@ -44,7 +44,7 @@ public class CrawlerService extends RecursiveAction {
     @Override
     protected void compute() {
         try {
-            if (context.getThisPool().isShutdown() || context.getNumberOfPagesToCrawl().get() < 0) {
+            if (!commonContext.isIndexing() || context.getThisPool().isShutdown() || context.getNumberOfPagesToCrawl().get() < 0) {
                 return;
             }
 
@@ -60,8 +60,8 @@ public class CrawlerService extends RecursiveAction {
                     }
                 } else {
                     log.info("cleaning up db for site " + context.getSite().getUrl());
-                    if (commonContext.isIndexing()) {
-                        synchronized (commonContext.getDatabaseService()) {
+                    synchronized (commonContext.getDatabaseService()) {
+                        if (commonContext.isIndexing()) {
                             commonContext.getDatabaseService().deleteSiteInformation(context.getSite());
                             context.setSite(commonContext.getDatabaseService().setSiteStatusToIndexing(context.getSite()));
                         }
@@ -153,6 +153,9 @@ public class CrawlerService extends RecursiveAction {
         for (String l : links) {
             if (context.getVisitedPages().contains(l) || !l.startsWith(context.getSite().getUrl()) || containsForbiddenComponents(l) ||
                     !context.getRobotsRules().isAllowed(l)) {
+                if (!context.getRobotsRules().isAllowed(l)) {
+                    log.info("link is not allowed by robots.txt: " + l);
+                }
                 context.getVisitedPages().add(l);
                 continue;
             }

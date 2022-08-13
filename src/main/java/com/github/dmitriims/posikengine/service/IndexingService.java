@@ -1,6 +1,8 @@
 package com.github.dmitriims.posikengine.service;
 
 import com.github.dmitriims.posikengine.dto.IndexingStatusResponse;
+import com.github.dmitriims.posikengine.dto.userprovaideddata.SiteUrlAndNameDTO;
+import com.github.dmitriims.posikengine.dto.userprovaideddata.UserProvidedData;
 import com.github.dmitriims.posikengine.exceptions.IndexingStatusException;
 import com.github.dmitriims.posikengine.model.Field;
 import com.github.dmitriims.posikengine.model.Site;
@@ -22,10 +24,13 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
 
 @Service
 public class IndexingService {
 
+    @Resource
+    private UserProvidedData userProvidedData;
     @Resource
     private SimpleRobotRulesParser robotsParser;
     @Resource
@@ -37,7 +42,7 @@ public class IndexingService {
 
     private final Logger log = LoggerFactory.getLogger(IndexingService.class);
 
-    Runnable indexingMonitor = () -> {
+    private final Runnable indexingMonitor = () -> {
         try {
             while (true) {
                 Thread.sleep(1000);
@@ -85,8 +90,7 @@ public class IndexingService {
         sitePools = new HashMap<>();
 
         for (Site site : sites) {
-            String topLevelSite = getTopLevelUrl(site.getUrl());
-            addSiteAndStartIndexing(topLevelSite, Integer.MAX_VALUE, fields);
+            addSiteAndStartIndexing(site, Integer.MAX_VALUE, fields);
         }
 
         indexingMonitorTread = new Thread(indexingMonitor, "Indexing-monitor");
@@ -130,14 +134,21 @@ public class IndexingService {
 
         sitePools = new HashMap<>();
         List<Field> fields = commonContext.getDatabaseService().getFieldRepository().findAll();
-        String topLevelSite = getTopLevelUrl(url);
+        List<String> userProvidedSitesUrls = userProvidedData.getSites().stream().map(SiteUrlAndNameDTO::getUrl).collect(Collectors.toList());
 
-        if (!commonContext.getDatabaseService().getSiteRepository().existsByUrl(topLevelSite)) {
+        String siteUrl = "";
+        for (String userUrl : userProvidedSitesUrls) {
+            if(url.startsWith(userUrl)) {
+                siteUrl = userUrl;
+            }
+        }
+        if (siteUrl.isBlank()) {
             throw new IndexingStatusException("Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
         }
 
         commonContext.setIndexing(true);
-        addOnePageAndIndex(topLevelSite, url, fields);
+        Site site = commonContext.getDatabaseService().getSiteByUrl(siteUrl);
+        addOnePageAndIndex(site, url, fields);
         indexingMonitorTread = new Thread(indexingMonitor, "Indexing-Monitor");
         indexingMonitorTread.start();
         return new IndexingStatusResponse(true, null);
@@ -172,14 +183,14 @@ public class IndexingService {
         return splitSite[0] + "//" + splitSite[1];
     }
 
-    public void addSiteAndStartIndexing(String topLevelSite, int limit, List<Field> fields) throws IOException {
-        CrawlerContext currentContext = generateCrawlerContext(topLevelSite, limit, fields);
+    public void addSiteAndStartIndexing(Site site, int limit, List<Field> fields) throws IOException {
+        CrawlerContext currentContext = generateCrawlerContext(site, limit, fields);
         CrawlerService crawler = new CrawlerService(currentContext, commonContext);
         launchIndexing(currentContext, crawler);
     }
 
-    public void addOnePageAndIndex(String topLevelSite, String url, List<Field> fields) throws IOException {
-        CrawlerContext currentContext = generateCrawlerContext(topLevelSite, 1, fields);
+    public void addOnePageAndIndex(Site site, String url, List<Field> fields) throws IOException {
+        CrawlerContext currentContext = generateCrawlerContext(site, 1, fields);
         CrawlerService crawler = new CrawlerService(url, currentContext, commonContext);
         launchIndexing(currentContext, crawler);
     }
@@ -189,11 +200,11 @@ public class IndexingService {
         sitePools.get(context.getSite()).execute(crawler);
     }
 
-    public CrawlerContext generateCrawlerContext (String topLevelSite, int limit, List<Field> fields) throws IOException {
-        Site siteToIndex = commonContext.getDatabaseService().getSiteRepository().findByUrl(topLevelSite);
+    public CrawlerContext generateCrawlerContext (Site site, int limit, List<Field> fields) throws IOException {
+        String topLevelSite = getTopLevelUrl(site.getUrl());
         ForkJoinPool pool = new ForkJoinPool();
         BaseRobotRules robotRules = robotsParser.parseContent(topLevelSite + "/robots.txt", getRobotsTxt(topLevelSite), "text/plain", commonContext.getUserAgent());
-        return new CrawlerContext(siteToIndex, pool, limit, new HashSet<>(fields), robotRules);
+        return new CrawlerContext(site, pool, limit, new HashSet<>(fields), robotRules);
     }
 
 }

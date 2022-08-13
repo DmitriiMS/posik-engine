@@ -85,10 +85,8 @@ public class DatabaseService {
     }
 
     @Transactional
-    public List<Site> getSiteByUrl(String url) {
-        return new ArrayList<>(){{
-            add(siteRepository.findByUrl(url));
-        }};
+    public Site getSiteByUrl(String url) {
+        return siteRepository.findByUrl(url);
     }
 
     @Transactional
