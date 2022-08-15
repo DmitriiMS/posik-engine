@@ -29,7 +29,8 @@ public class DatabaseService {
     private Logger log = LoggerFactory.getLogger(DatabaseService.class);
 
     @Autowired
-    public DatabaseService(SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, FieldRepository fieldRepository) {
+    public DatabaseService(SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository,
+                           IndexRepository indexRepository, FieldRepository fieldRepository) {
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
         this.lemmaRepository = lemmaRepository;
@@ -38,7 +39,7 @@ public class DatabaseService {
     }
 
     @Transactional
-    public void savePageToDataBase(Site site, Page page, List<Lemma> lemmas) {
+    public void savePageToDataBase(Site site, Page page, List<Lemma> lemmas, CommonContext commonContext) {
         Page savedPage = pageRepository.save(page);
 
         for (Lemma lemmaToSave : lemmas) {
@@ -65,18 +66,11 @@ public class DatabaseService {
 
             indexRepository.save(indexToUpdate);
         }
-
-        setSiteStatusToIndexing(site);
-    }
-
-    @Transactional
-    public Site setSiteStatusToIndexed(Site site) {
-        Site siteToUpdate = siteRepository.findById(site.getId()).get();
-        siteToUpdate.setStatus(Status.INDEXED);
-        siteToUpdate.setLastError("");
-        siteToUpdate.setStatusTime(LocalDateTime.now());
-        site = siteRepository.save(siteToUpdate);
-        return site;
+        if(commonContext.isIndexing()) {
+            setSiteStatusToIndexing(site);
+        } else {
+            setSiteStatusToFailed(site, commonContext.getIndexingMessage());
+        }
     }
 
     @Transactional
@@ -87,6 +81,16 @@ public class DatabaseService {
     @Transactional
     public Site getSiteByUrl(String url) {
         return siteRepository.findByUrl(url);
+    }
+
+    @Transactional
+    public Site setSiteStatusToIndexed(Site site) {
+        Site siteToUpdate = siteRepository.findById(site.getId()).get();
+        siteToUpdate.setStatus(Status.INDEXED);
+        siteToUpdate.setLastError("");
+        siteToUpdate.setStatusTime(LocalDateTime.now());
+        site = siteRepository.save(siteToUpdate);
+        return site;
     }
 
     @Transactional
@@ -116,8 +120,8 @@ public class DatabaseService {
 
     @Transactional
     public void deleteSiteInformation(Site site) {
-        List<Long> test = pageRepository.getAllIdsBySiteId(site.getId());
-        for(long id : test) {
+        List<Long> pageIds = pageRepository.getAllIdsBySiteId(site.getId());
+        for(long id : pageIds) {
             indexRepository.deleteAllByPage_Id(id);
         }
         lemmaRepository.deleteAllBySite(site);

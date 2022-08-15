@@ -25,15 +25,15 @@ search-engine-properties:
   home-page: /admin
   preload:
     sites:
-#      -
-#        url: https://nikoartgallery.com
-#        name: Галерея искусств Niko
+      -
+        url: https://nikoartgallery.com
+        name: Галерея искусств Niko
 #      -
 #        url: https://www.lutherancathedral.ru
 #        name: Собор Петра и Павла
-      -
-        url: https://et-cetera.ru/mobile/
-        name: Театр «Et Cetera»
+#      -
+#        url: https://et-cetera.ru/mobile
+#        name: Театр «Et Cetera»
     fields:
       -
         name: title

@@ -1,9 +1,6 @@
 package com.github.dmitriims.posikengine.service.crawler;
 
-import com.github.dmitriims.posikengine.model.Field;
-import com.github.dmitriims.posikengine.model.Lemma;
-import com.github.dmitriims.posikengine.model.Page;
-import com.github.dmitriims.posikengine.model.Status;
+import com.github.dmitriims.posikengine.model.*;
 import com.github.dmitriims.posikengine.service.CommonContext;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -48,13 +45,12 @@ public class CrawlerService extends RecursiveAction {
                 return;
             }
 
-            if (commonContext.isIndexing() &&
-                    (context.getSite().getStatus().equals(Status.INDEXED) || context.getSite().getLastError().equals("Индексация прервана пользователем"))) {
+            if (commonContext.isIndexing() && isSiteIndexedOrInterrupted(context.getSite())) {
                 if (context.getNumberOfPagesToCrawl().get() == 1) {
+                    //TODO: indexing for one page dowsn't work correctly, need to reimplement
                     log.info("reindexing page " + link + " for site " + context.getSite().getUrl());
                     synchronized (commonContext.getDatabaseService()) {
                         if (commonContext.isIndexing()) {
-                            commonContext.getDatabaseService().getPageRepository().deleteBySite(context.getSite());
                             context.setSite(commonContext.getDatabaseService().setSiteStatusToIndexing(context.getSite()));
                         }
                     }
@@ -72,7 +68,7 @@ public class CrawlerService extends RecursiveAction {
             Thread.sleep(context.getDelayGenerator().ints(500, 5000).findFirst().getAsInt());
 
             Set<String> filteredLinks = processOnePage(link);
-            if (filteredLinks.size() != 0) {
+            if (commonContext.isIndexing() && filteredLinks.size() != 0) {
                 invokeAll(filteredLinks.stream().map(link -> new CrawlerService(link, context, commonContext)).toList());
             }
         } catch (IOException ioe) {
@@ -80,6 +76,11 @@ public class CrawlerService extends RecursiveAction {
         } catch (InterruptedException ie) {
             log.warn(ie.toString());
         }
+    }
+
+    public boolean isSiteIndexedOrInterrupted(Site site) {
+        return site.getStatus().equals(Status.INDEXED) ||
+                (site.getStatus().equals(Status.FAILED) && site.getLastError().equals("Индексация прервана пользователем"));
     }
 
     public Set<String> processOnePage(String url) throws IOException {
@@ -107,21 +108,21 @@ public class CrawlerService extends RecursiveAction {
         Document document = response.parse();
         List<Lemma> allLemmas = getAndRankAllLemmas(document);
 
-        if (context.getNumberOfPagesToCrawl().decrementAndGet() >= 0) {
+        if (commonContext.isIndexing() && context.getNumberOfPagesToCrawl().decrementAndGet() > 0) {
             synchronized (commonContext.getDatabaseService()) {
-                commonContext.getDatabaseService().savePageToDataBase(context.getSite(), currentPage, allLemmas);
-
+                commonContext.getDatabaseService().savePageToDataBase(context.getSite(), currentPage, allLemmas, commonContext);
             }
+            return filterLinks(
+                    document.select("a[href]")
+                            .stream()
+                            .map(e -> {
+                                String link = e.attr("abs:href");
+                                return decodeLink(link);
+                            }).toList()
+            );
         }
 
-        return filterLinks(
-                document.select("a[href]")
-                        .stream()
-                        .map(e -> {
-                            String link = e.attr("abs:href");
-                            return decodeLink(link);
-                        }).toList()
-        );
+        return new HashSet<>();
     }
 
     public List<Lemma> getAndRankAllLemmas(Document doc) throws IOException {

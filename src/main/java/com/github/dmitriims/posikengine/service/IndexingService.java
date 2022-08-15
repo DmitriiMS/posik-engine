@@ -22,8 +22,10 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,7 +44,7 @@ public class IndexingService {
 
     private final Logger log = LoggerFactory.getLogger(IndexingService.class);
 
-    private final Runnable indexingMonitor = () -> {
+    Runnable indexingMonitor = () -> {
         try {
             while (true) {
                 Thread.sleep(1000);
@@ -55,8 +57,17 @@ public class IndexingService {
                 while (it.hasNext()) {
                     Map.Entry<Site, ForkJoinPool> pool = it.next();
 
-                    if (!pool.getValue().isShutdown() && pool.getValue().isQuiescent()) {
-                        pool.getValue().shutdown();
+                    if(pool.getValue().isShutdown()) {
+                        log.info("waiting for workers to finish all current tasks for site " + pool.getKey().getUrl());
+                        if (!pool.getValue().awaitTermination(10, TimeUnit.SECONDS)) {
+                            log.warn("pool didn't terminate within timeout, releasing lock on the front anyway");
+                        }
+                        log.info("indexing interrupted by user for site " + pool.getKey().getUrl());
+                        it.remove();
+                        continue;
+                    }
+
+                    if (pool.getValue().isQuiescent()) {
                         synchronized (commonContext.getDatabaseService()) {
                             commonContext.getDatabaseService().setSiteStatusToIndexed(pool.getKey());
                         }
@@ -66,7 +77,8 @@ public class IndexingService {
                 }
             }
         } catch (InterruptedException e) {
-            log.info("indexing is halted during wait timer, terminated Indexing-monitor");
+            log.error("something interrupted Indexing-monitor during timeout!");
+            throw new RuntimeException(); //TODO: сделать обработку
         }
     };
 
@@ -79,11 +91,12 @@ public class IndexingService {
     }
 
     public IndexingStatusResponse startIndexing() throws IOException, IndexingStatusException {
-
         if (commonContext.isIndexing()) {
             throw new IndexingStatusException("Индексация уже запущена");
         }
+
         commonContext.setIndexing(true);
+        commonContext.resetIndexingMessage();
 
         List<Site> sites = commonContext.getDatabaseService().getSiteRepository().findAll();
         List<Field> fields = commonContext.getDatabaseService().getFieldRepository().findAll();
@@ -104,17 +117,13 @@ public class IndexingService {
             throw new IndexingStatusException("Индексация уже остановлена");
         }
         commonContext.setIndexing(false);
+        commonContext.setIndexingMessage("Индексация прервана пользователем");
 
-        log.info("indexing is stopping, sending termination commands to workers");
+        log.info("indexing is stopping, sending termination command to workers");
         Iterator<Map.Entry<Site, ForkJoinPool>> it = sitePools.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<Site, ForkJoinPool> pool = it.next();
             pool.getValue().shutdownNow();
-            synchronized (commonContext.getDatabaseService()) {
-                commonContext.getDatabaseService().setSiteStatusToFailed(pool.getKey(), "Индексация прервана пользователем");
-            }
-            log.info("indexing interrupted by user for site " + pool.getKey().getUrl());
-            it.remove();
         }
 
         try {
@@ -147,6 +156,8 @@ public class IndexingService {
         }
 
         commonContext.setIndexing(true);
+        commonContext.resetIndexingMessage();
+
         Site site = commonContext.getDatabaseService().getSiteByUrl(siteUrl);
         addOnePageAndIndex(site, url, fields);
         indexingMonitorTread = new Thread(indexingMonitor, "Indexing-Monitor");
