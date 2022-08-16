@@ -29,8 +29,18 @@ public class Index {
     @Column(name = "`rank`")
     private double rank;
 
+    @Column(name = "`count`")
+    private int count;
+
     public Index(){
 
+    }
+
+    public Index(Page page, Lemma lemma, double rank, int count) {
+        this.page = page;
+        this.lemma = lemma;
+        this.rank = rank;
+        this.count = count;
     }
 
     @Override
@@ -40,6 +50,7 @@ public class Index {
                 ", page=" + page +
                 ", lemma=" + lemma +
                 ", rank=" + rank +
+                ", count=" + count +
                 '}';
     }
 }

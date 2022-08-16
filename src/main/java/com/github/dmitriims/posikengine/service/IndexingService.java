@@ -196,12 +196,14 @@ public class IndexingService {
 
     public void addSiteAndStartIndexing(Site site, int limit, List<Field> fields) throws IOException {
         CrawlerContext currentContext = generateCrawlerContext(site, limit, fields);
+        currentContext.setReindexOnePage(false);
         CrawlerService crawler = new CrawlerService(currentContext, commonContext);
         launchIndexing(currentContext, crawler);
     }
 
     public void addOnePageAndIndex(Site site, String url, List<Field> fields) throws IOException {
         CrawlerContext currentContext = generateCrawlerContext(site, 1, fields);
+        currentContext.setReindexOnePage(true);
         CrawlerService crawler = new CrawlerService(url, currentContext, commonContext);
         launchIndexing(currentContext, crawler);
     }

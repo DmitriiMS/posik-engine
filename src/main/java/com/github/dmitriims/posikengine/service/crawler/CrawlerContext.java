@@ -21,6 +21,8 @@ public class CrawlerContext {
     private Random delayGenerator;
     private BaseRobotRules robotsRules;
 
+    private boolean reindexOnePage;
+
     public CrawlerContext(Site site, ForkJoinPool thisPool, int pagesToCrawlLimit, Set<Field> fields, BaseRobotRules robotsRules) {
         this.site = site;
         this.thisPool = thisPool;

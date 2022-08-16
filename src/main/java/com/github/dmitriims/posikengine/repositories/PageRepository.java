@@ -10,8 +10,7 @@ import java.util.List;
 
 public interface PageRepository extends JpaRepository<Page, Long> {
     long countBySite(Site site);
-    Page findBySiteAndPath(Site site, String path);
-    long deleteBySiteAndPath(Site site, String path);
+    Page findBySiteAndPathEquals(Site site, String path);
     long deleteAllBySite(Site site);
     List<Page> findAllBySiteIn(List<Site> site);
     List<Page> findAllByIdIn(Collection<Long> ids);

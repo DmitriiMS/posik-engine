@@ -1,5 +1,6 @@
 package com.github.dmitriims.posikengine.service.crawler;
 
+import com.github.dmitriims.posikengine.exceptions.IndexingStatusException;
 import com.github.dmitriims.posikengine.model.*;
 import com.github.dmitriims.posikengine.service.CommonContext;
 import org.jsoup.Connection;
@@ -46,14 +47,18 @@ public class CrawlerService extends RecursiveAction {
             }
 
             if (commonContext.isIndexing() && isSiteIndexedOrInterrupted(context.getSite())) {
-                if (context.getNumberOfPagesToCrawl().get() == 1) {
-                    //TODO: indexing for one page dowsn't work correctly, need to reimplement
-                    log.info("reindexing page " + link + " for site " + context.getSite().getUrl());
-                    synchronized (commonContext.getDatabaseService()) {
-                        if (commonContext.isIndexing()) {
-                            context.setSite(commonContext.getDatabaseService().setSiteStatusToIndexing(context.getSite()));
-                        }
+                if (context.isReindexOnePage()) {
+                    log.info("indexing page " + link + " for site " + context.getSite().getUrl());
+                    Connection.Response response = getResponseFromLink(link);
+                    if(!response.contentType().startsWith("text")) {
+                        throw new IndexingStatusException("Страницы с типом \"" + response.contentType() + "\" не участвуют в индексировании");
                     }
+                    Page onePage = getPageFromResponse(response);
+                    Document document = response.parse();
+                    List<Lemma> lemmas = getAndRankAllLemmas(document);
+                    commonContext.getDatabaseService().reindexOnePage(context.getSite(), onePage, lemmas, commonContext);
+                    return;
+
                 } else {
                     log.info("cleaning up db for site " + context.getSite().getUrl());
                     synchronized (commonContext.getDatabaseService()) {
@@ -65,7 +70,7 @@ public class CrawlerService extends RecursiveAction {
                 }
             }
 
-            Thread.sleep(context.getDelayGenerator().ints(500, 5000).findFirst().getAsInt());
+            Thread.sleep(context.getDelayGenerator().ints(500, 5001).findFirst().getAsInt());
 
             Set<String> filteredLinks = processOnePage(link);
             if (commonContext.isIndexing() && filteredLinks.size() != 0) {
@@ -84,26 +89,11 @@ public class CrawlerService extends RecursiveAction {
     }
 
     public Set<String> processOnePage(String url) throws IOException {
-        Connection.Response response = Jsoup.connect(link)
-                .userAgent(commonContext.getUserAgent())
-                .referrer("http://www.google.com")
-                .timeout(60 * 1000)
-                .ignoreContentType(true)
-                .ignoreHttpErrors(true)
-                .execute();
-        String type = response.contentType();
-        if (!type.startsWith("text")) {
+        Connection.Response response = getResponseFromLink(url);
+        if (!response.contentType().startsWith("text")) {
             return new HashSet<>();
         }
-        int code = response.statusCode();
-        String content = response.body();
-
-        Page currentPage = new Page();
-        currentPage.setSite(context.getSite());
-        currentPage.setPath(link.replaceFirst(context.getSite().getUrl(),
-                link.equals(context.getSite().getUrl()) ? "/" : ""));
-        currentPage.setCode(code);
-        currentPage.setContent(content);
+        Page currentPage = getPageFromResponse(response);
 
         Document document = response.parse();
         List<Lemma> allLemmas = getAndRankAllLemmas(document);
@@ -123,6 +113,29 @@ public class CrawlerService extends RecursiveAction {
         }
 
         return new HashSet<>();
+    }
+
+    public Connection.Response getResponseFromLink(String url) throws IOException {
+        return Jsoup.connect(url)
+                .userAgent(commonContext.getUserAgent())
+                .referrer("http://www.google.com")
+                .timeout(60 * 1000)
+                .ignoreContentType(true)
+                .ignoreHttpErrors(true)
+                .execute();
+    }
+
+    public Page getPageFromResponse(Connection.Response response) {
+        int code = response.statusCode();
+        String content = response.body();
+
+        Page page = new Page();
+        page.setSite(context.getSite());
+        page.setPath(link.replaceFirst(context.getSite().getUrl(),
+                link.equals(context.getSite().getUrl()) ? "/" : ""));
+        page.setCode(code);
+        page.setContent(content);
+        return page;
     }
 
     public List<Lemma> getAndRankAllLemmas(Document doc) throws IOException {

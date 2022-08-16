@@ -7,6 +7,7 @@ import org.hibernate.annotations.CascadeType;
 
 import javax.persistence.*;
 
+import java.util.Objects;
 import java.util.Set;
 
 @Setter
