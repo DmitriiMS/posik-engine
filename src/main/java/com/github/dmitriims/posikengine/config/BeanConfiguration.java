@@ -44,4 +44,7 @@ public class BeanConfiguration {
     public String userAgent() {
         return "${search-engine-properties.user-agent}";
     }
+
+    @Bean(name = "notAWord")
+    public String notAWord() { return "(?:\\.*\\s+\\-\\s+\\.*)|[^\\-а-яА-Яa-zA-Z\\d\\ё\\Ё]+";}
 }

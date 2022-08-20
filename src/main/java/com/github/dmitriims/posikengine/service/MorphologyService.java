@@ -2,6 +2,7 @@ package com.github.dmitriims.posikengine.service;
 
 import lombok.NoArgsConstructor;
 import org.apache.lucene.morphology.LuceneMorphology;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +15,22 @@ import java.util.*;
 @Service
 public class MorphologyService {
 
-    @Resource
-    @Value("(?:\\.*\\s+\\-\\s+\\.*)|[^\\-а-яА-Яa-zA-Z\\d\\ё\\Ё]+")
+
     private String NOT_A_WORD_PATTERN;
-    @Resource(name = "russianMorphology")
     private LuceneMorphology russianLuceneMorph;
-    @Resource(name = "englishMorphology")
     private LuceneMorphology englishLuceneMorph;
+
+    public MorphologyService(
+            @Qualifier("notAWord")
+            String NOT_A_WORD_PATTERN,
+            @Qualifier("russianMorphology")
+            LuceneMorphology russianLuceneMorph,
+            @Qualifier("englishMorphology")
+            LuceneMorphology englishLuceneMorph) {
+        this.NOT_A_WORD_PATTERN = NOT_A_WORD_PATTERN;
+        this.russianLuceneMorph = russianLuceneMorph;
+        this.englishLuceneMorph = englishLuceneMorph;
+    }
 
     public Map<String, Integer> getAndCountLemmasInString(String input) {
         Map<String, Integer> dictionaryWithCount = new TreeMap<>();
@@ -36,7 +46,7 @@ public class MorphologyService {
         return dictionaryWithCount;
     }
 
-    public List<String> getNormalFormOfAWord(String word) {
+    List<String> getNormalFormOfAWord(String word) {
         if (russianLuceneMorph.checkString(word) && !isRussianGarbage(russianLuceneMorph.getMorphInfo(word))) {
             return russianLuceneMorph.getNormalForms(word);
         } else if (englishLuceneMorph.checkString(word) && !isEnglishGarbage(englishLuceneMorph.getMorphInfo(word))) {
@@ -47,11 +57,7 @@ public class MorphologyService {
         return new ArrayList<>();
     }
 
-    public String readFileToString(String filePath) throws IOException {
-        return new String(Files.readAllBytes(Path.of(filePath)));
-    }
-
-    public String[] splitStringToLowercaseWords(String input) {
+    String[] splitStringToLowercaseWords(String input) {
         return Arrays.stream(input.toLowerCase(Locale.ROOT)
                         .replaceAll(NOT_A_WORD_PATTERN, " ")
                         .trim()
@@ -60,7 +66,7 @@ public class MorphologyService {
     }
 
 
-    public boolean isRussianGarbage(List<String> morphInfos) {
+    boolean isRussianGarbage(List<String> morphInfos) {
         for(String variant : morphInfos) {
             if (variant.contains(" СОЮЗ") || variant.contains(" МЕЖД") ||
                     variant.contains(" ПРЕДЛ") || variant.contains(" ЧАСТ")) {
@@ -70,7 +76,7 @@ public class MorphologyService {
         return false;
     }
 
-    public boolean isEnglishGarbage (List<String> morphInfos) {
+    boolean isEnglishGarbage (List<String> morphInfos) {
         for(String variant : morphInfos) {
             if (variant.contains(" CONJ") || variant.contains(" INT") ||
                     variant.contains(" PREP") || variant.contains(" PART") ||  variant.contains(" ARTICLE")) {
