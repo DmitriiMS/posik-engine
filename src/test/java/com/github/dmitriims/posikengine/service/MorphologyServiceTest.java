@@ -26,64 +26,64 @@ public class MorphologyServiceTest {
     @DisplayName("Тест splitStringToLowerCaseWords с простой строкой")
     public void testSplitStringToLowercaseWordsSimpleExample() {
         String input = "This is a simple input string, really SIMPLE one!";
-        String[] correct = new String[]{"this", "is", "a", "simple", "input", "string", "really", "simple", "one"};
-        String[] response = morphologyService.splitStringToLowercaseWords(input);
-        assertArrayEquals(correct, response);
+        String[] expected = new String[]{"this", "is", "a", "simple", "input", "string", "really", "simple", "one"};
+        String[] actual = morphologyService.splitStringToLowercaseWords(input);
+        assertArrayEquals(expected, actual);
     }
 
     @Test
     @DisplayName("splitStringToLowerCaseWords тест с пустой строкой")
     public void testSplitStringToLowercaseWordsEmptyString() {
         String input = "";
-        String[] correct = new String[]{};
-        String[] response = morphologyService.splitStringToLowercaseWords(input);
-        assertArrayEquals(correct, response);
+        String[] expected = new String[]{};
+        String[] actual = morphologyService.splitStringToLowercaseWords(input);
+        assertArrayEquals(expected, actual);
     }
 
     @Test
     @DisplayName("splitStringToLowerCaseWords тест с пробельными символами")
     public void testSplitStringToLowercaseWordsWhiteSpaceString() {
         String input = " \n\t  ";
-        String[] correct = new String[]{};
-        String[] response = morphologyService.splitStringToLowercaseWords(input);
-        assertArrayEquals(correct, response);
+        String[] expected = new String[]{};
+        String[] actual = morphologyService.splitStringToLowercaseWords(input);
+        assertArrayEquals(expected, actual);
     }
 
     @Test
     @DisplayName("splitStringToLowerCaseWords тест с числами")
     public void testSplitStringToLowercaseWordsWDigitsAllowed() {
         String input = "31 июня";
-        String[] correct = new String[]{"31", "июня"};
-        String[] response = morphologyService.splitStringToLowercaseWords(input);
-        assertArrayEquals(correct, response);
+        String[] expected = new String[]{"31", "июня"};
+        String[] actual = morphologyService.splitStringToLowercaseWords(input);
+        assertArrayEquals(expected, actual);
     }
 
     @Test
     @DisplayName("splitStringToLowerCaseWords тест с мусором")
     public void testSplitStringToLowercaseOnlyGarbage() {
         String input = "*/.!@#$%^&*()+\"'`[]{}<|>\\";
-        String[] correct = new String[]{};
-        String[] response = morphologyService.splitStringToLowercaseWords(input);
-        assertArrayEquals(correct, response);
+        String[] expected = new String[]{};
+        String[] actual = morphologyService.splitStringToLowercaseWords(input);
+        assertArrayEquals(expected, actual);
     }
 
     @Test
     @DisplayName("splitStringToLowerCaseWords тест со словом через дефис")
     public void testSplitStringToLowercaseHyphenatedAllowed() {
         String input = "Из-за острого изжога!";
-        String[] correct = new String[]{"из-за", "острого", "изжога"};
-        String[] response = morphologyService.splitStringToLowercaseWords(input);
-        assertArrayEquals(correct, response);
+        String[] expected = new String[]{"из-за", "острого", "изжога"};
+        String[] actual = morphologyService.splitStringToLowercaseWords(input);
+        assertArrayEquals(expected, actual);
     }
 
     @Test
     @DisplayName("splitStringToLowerCaseWords тест со сложным предложением")
     public void testSplitStringToLowercaseComplex() {
         String input = "21/04/1998 в 11:00 произошло интереснейшее событие - вазбегульт, более известное как <redacted>.";
-        String[] correct = new String[]{"21", "04", "1998", "в", "11", "00", "произошло", "интереснейшее", "событие",
+        String[] expected = new String[]{"21", "04", "1998", "в", "11", "00", "произошло", "интереснейшее", "событие",
                  "вазбегульт", "более", "известное", "как", "redacted"};
-        String[] response = morphologyService.splitStringToLowercaseWords(input);
-        assertArrayEquals(correct, response);
+        String[] actual = morphologyService.splitStringToLowercaseWords(input);
+        assertArrayEquals(expected, actual);
     }
 
     @Test
@@ -155,54 +155,54 @@ public class MorphologyServiceTest {
     @Test
     @DisplayName("getNormalFormOfAWord - русский")
     public void testGetNormalFormOfAWordRussian() {
-        List<String> correct = new ArrayList<>() {{
+        List<String> expected = new ArrayList<>() {{
             add("тест");
             add("тесто");
         }};
-        List<String> response = morphologyService.getNormalFormOfAWord("тест");
-        assertIterableEquals(correct, response);
+        List<String> actual = morphologyService.getNormalFormOfAWord("тест");
+        assertIterableEquals(expected, actual);
     }
 
     @Test
     @DisplayName("getNormalFormOfAWord - английский")
     public void testGetNormalFormOfAWordEnglish() {
-        List<String> correct = new ArrayList<>() {{
+        List<String> expected = new ArrayList<>() {{
             add("test");
         }};
-        List<String> response = morphologyService.getNormalFormOfAWord("test");
-        assertIterableEquals(correct, response);
+        List<String> actual = morphologyService.getNormalFormOfAWord("test");
+        assertIterableEquals(expected, actual);
     }
 
     @Test
     @DisplayName("getNormalFormOfAWord - число")
     public void testGetNormalFormOfAWordDigit() {
-        List<String> correct = new ArrayList<>() {{
+        List<String> expected = new ArrayList<>() {{
             add("42");
         }};
-        List<String> response = morphologyService.getNormalFormOfAWord("42");
-        assertIterableEquals(correct, response);
+        List<String> actual = morphologyService.getNormalFormOfAWord("42");
+        assertIterableEquals(expected, actual);
     }
 
     @Test
     @DisplayName("getNormalFormOfAWord - мусор")
     public void testGetNormalFormOfAWordGarbage() {
-        List<String> correct = new ArrayList<>();
-        List<String> response = morphologyService.getNormalFormOfAWord("или");
-        assertIterableEquals(correct, response);
+        List<String> expected = new ArrayList<>();
+        List<String> actual = morphologyService.getNormalFormOfAWord("или");
+        assertIterableEquals(expected, actual);
     }
 
     @Test
     @DisplayName("getNormalFormOfAWord - другой язык")
     public void testGetNormalFormOfAWordAnotherLanguage() {
-        List<String> correct = new ArrayList<>();
-        List<String> response = morphologyService.getNormalFormOfAWord("猫");
-        assertIterableEquals(correct, response);
+        List<String> expected = new ArrayList<>();
+        List<String> actual = morphologyService.getNormalFormOfAWord("猫");
+        assertIterableEquals(expected, actual);
     }
 
     @Test
     @DisplayName("getAndCountLemmasInString - подсчёт лемм")
     public void testGetAndCountLemmasInStringNormal() {
-        Map<String, Integer> correct  = new TreeMap<>(){{ //TODO: проверить в последствии замену на обычную хэшмапу
+        Map<String, Integer> expected  = new TreeMap<>(){{ //TODO: проверить в последствии замену на обычную хэшмапу
             put("42", 1);
             put("be", 1);
             put("first", 3);
@@ -211,15 +211,15 @@ public class MorphologyServiceTest {
             put("which", 1);
             put("word", 1);
         }};
-        Map<String, Integer> response = morphologyService.
+        Map<String, Integer> actual = morphologyService.
                 getAndCountLemmasInString("First we parsed the first word which was the first to parse. Но не 42!");
-        assertIterableEquals(correct.entrySet(), response.entrySet());
+        assertIterableEquals(expected.entrySet(), actual.entrySet());
     }
     @Test
     @DisplayName("getAndCountLemmasInString - если мусор, то ничего не вернёт")
     public void testGetAndCountLemmasInStringGarbage() {
-        Map<String, Integer> correct  = new TreeMap<>();
-        Map<String, Integer> response = morphologyService.getAndCountLemmasInString("猫 или 鯨? Тьфу drat!");
-        assertIterableEquals(correct.entrySet(), response.entrySet());
+        Map<String, Integer> expected  = new TreeMap<>();
+        Map<String, Integer> actual = morphologyService.getAndCountLemmasInString("猫 или 鯨? Тьфу drat!");
+        assertIterableEquals(expected.entrySet(), actual.entrySet());
     }
 }
