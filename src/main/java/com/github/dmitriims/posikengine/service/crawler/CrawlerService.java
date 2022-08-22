@@ -42,7 +42,7 @@ public class CrawlerService extends RecursiveAction {
     @Override
     protected void compute() {
         try {
-            if (!commonContext.isIndexing() || context.getThisPool().isShutdown() || context.getNumberOfPagesToCrawl().get() < 0) {
+            if (!commonContext.isIndexing() || context.getThisPool().isShutdown() || context.getNumberOfPagesToCrawl().get() <= 0) {
                 return;
             }
 
@@ -68,6 +68,8 @@ public class CrawlerService extends RecursiveAction {
                         }
                     }
                 }
+            } else if (!commonContext.isIndexing()) {
+                return;
             }
 
             Thread.sleep(context.getDelayGenerator().ints(500, 5001).findFirst().getAsInt());
@@ -83,12 +85,12 @@ public class CrawlerService extends RecursiveAction {
         }
     }
 
-    public boolean isSiteIndexedOrInterrupted(Site site) {
+    boolean isSiteIndexedOrInterrupted(Site site) {
         return site.getStatus().equals(Status.INDEXED) ||
                 (site.getStatus().equals(Status.FAILED) && site.getLastError().equals("Индексация прервана пользователем"));
     }
 
-    public Set<String> processOnePage(String url) throws IOException {
+    Set<String> processOnePage(String url) throws IOException {
         Connection.Response response = getResponseFromLink(url);
         if (!response.contentType().startsWith("text")) {
             return new HashSet<>();
@@ -115,7 +117,7 @@ public class CrawlerService extends RecursiveAction {
         return new HashSet<>();
     }
 
-    public Connection.Response getResponseFromLink(String url) throws IOException {
+    Connection.Response getResponseFromLink(String url) throws IOException {
         return Jsoup.connect(url)
                 .userAgent(commonContext.getUserAgent())
                 .referrer("http://www.google.com")
@@ -125,7 +127,7 @@ public class CrawlerService extends RecursiveAction {
                 .execute();
     }
 
-    public Page getPageFromResponse(Connection.Response response) {
+    Page getPageFromResponse(Connection.Response response) {
         int code = response.statusCode();
         String content = response.body();
 
@@ -138,7 +140,7 @@ public class CrawlerService extends RecursiveAction {
         return page;
     }
 
-    public List<Lemma> getAndRankAllLemmas(Document doc) throws IOException {
+    List<Lemma> getAndRankAllLemmas(Document doc) throws IOException {
         List<Lemma> allLemmas = new ArrayList<>();
         for (Field f : context.getFields()) {
             String fieldText = doc.select(f.getSelector()).text();
@@ -162,7 +164,7 @@ public class CrawlerService extends RecursiveAction {
         return allLemmas;
     }
 
-    public Set<String> filterLinks(List<String> links) {
+    Set<String> filterLinks(List<String> links) {
         Set<String> filtered = new HashSet<>();
         for (String l : links) {
             if (context.getVisitedPages().contains(l) || !l.startsWith(context.getSite().getUrl()) || containsForbiddenComponents(l) ||
@@ -175,7 +177,7 @@ public class CrawlerService extends RecursiveAction {
         return filtered;
     }
 
-    private boolean containsForbiddenComponents(String link) {
+    boolean containsForbiddenComponents(String link) {
         for (String component : commonContext.getFORBIDDEN_COMPONENTS()) {
             if (link.contains(component)) {
                 return true;
@@ -184,7 +186,7 @@ public class CrawlerService extends RecursiveAction {
         return false;
     }
 
-    private String decodeLink(String link) {
+    String decodeLink(String link) {
         link = link.replaceAll("%(?![\\da-fA-F]{2})", "%25");
         link = link.replaceAll("\\+", "%2B");
         return URLDecoder.decode(link, StandardCharsets.UTF_8);
