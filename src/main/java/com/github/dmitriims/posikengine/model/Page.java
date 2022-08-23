@@ -51,32 +51,20 @@ public class Page {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (o == this) return true;
+    public boolean equals(Object o) {
+        if (this == o) return true;
         if (!(o instanceof Page)) return false;
-        final Page other = (Page) o;
-        if (!other.canEqual((Object) this)) return false;
-        final Object this$content = this.getContent();
-        final Object other$content = other.getContent();
-        if (this$content == null ? other$content != null : !this$content.equals(other$content)) return false;
-        if (this.code == 404 && other.getCode() == 404) {
-            final Object this$path = this.getPath();
-            final Object other$path = other.getPath();
-            return this$path == null ? other$path == null : this$path.equals(other$path);
+        Page page = (Page) o;
+        if (!Objects.equals(site, page.site)) return false;
+        if (!Objects.equals(content, page.content)) return false;
+        if (this.code == 404 && page.code == 404) {
+            return Objects.equals(path, page.path);
         }
         return true;
     }
 
-    protected boolean canEqual(final Object other) {
-        return other instanceof Page;
-    }
-
     @Override
     public int hashCode() {
-        final int PRIME = 59;
-        int result = 1;
-        final Object $content = this.getContent();
-        result = result * PRIME + ($content == null ? 43 : $content.hashCode());
-        return result;
+        return Objects.hash(site, path, code, content);
     }
 }

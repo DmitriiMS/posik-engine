@@ -417,15 +417,15 @@ public class CrawlerServiceTest {
 
             Lemma lemma1 = new Lemma();
             lemma1.setSite(site);
-            lemma1.setLemma("parse");
-            lemma1.setFrequency(2);
-            lemma1.setRank(1.6);
+            lemma1.setLemma("title");
+            lemma1.setFrequency(3);
+            lemma1.setRank(2.8);
 
             Lemma lemma2 = new Lemma();
             lemma2.setSite(site);
-            lemma2.setLemma("title");
-            lemma2.setFrequency(3);
-            lemma2.setRank(2.8);
+            lemma2.setLemma("parse");
+            lemma2.setFrequency(2);
+            lemma2.setRank(1.6);
 
             List<Lemma> expected = new ArrayList<>(){{
                 add(lemma1);
