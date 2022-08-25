@@ -98,8 +98,8 @@ public class IndexingService {
         commonContext.setIndexing(true);
         commonContext.resetIndexingMessage();
 
-        List<Site> sites = commonContext.getDatabaseService().getSiteRepository().findAll();
-        List<Field> fields = commonContext.getDatabaseService().getFieldRepository().findAll();
+        List<Site> sites = commonContext.getDatabaseService().getAllSites();
+        List<Field> fields = commonContext.getDatabaseService().getAllFields();
         sitePools = new HashMap<>();
 
         for (Site site : sites) {
@@ -142,7 +142,7 @@ public class IndexingService {
         }
 
         sitePools = new HashMap<>();
-        List<Field> fields = commonContext.getDatabaseService().getFieldRepository().findAll();
+        List<Field> fields = commonContext.getDatabaseService().getAllFields();
         List<String> userProvidedSitesUrls = userProvidedData.getSites().stream().map(SiteUrlAndNameDTO::getUrl).collect(Collectors.toList());
 
         String siteUrl = "";

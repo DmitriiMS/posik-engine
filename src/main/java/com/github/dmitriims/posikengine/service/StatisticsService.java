@@ -23,22 +23,19 @@ public class StatisticsService {
     DatabaseService dbService;
 
     public StatisticsResponse getStatistics() {
-        SiteRepository sr = dbService.getSiteRepository();
-        PageRepository pr = dbService.getPageRepository();
-        LemmaRepository lr = dbService.getLemmaRepository();
 
-        boolean isIndexing = sr.existsByStatus(Status.INDEXING);
-        Total total = new Total(sr.count(), pr.count(), lr.count(), isIndexing);
+        boolean isIndexing = dbService.siteExistsByStatus(Status.INDEXING);
+        Total total = new Total(dbService.siteCount(), dbService.pageCount(), dbService.lemmaCount(), isIndexing);
         List<Detailed> detailed = new ArrayList<>();
-        List<Site> sites = sr.findAll();
+        List<Site> sites = dbService.getAllSites();
         for (Site site : sites) {
             Detailed d = new Detailed(site.getUrl(),
                     site.getName(),
                     site.getStatus(),
                     site.getStatusTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
                     site.getLastError(),
-                    pr.countBySite(site),
-                    lr.countBySite(site));
+                    dbService.countPagesBySite(site),
+                    dbService.countLemmasBySite(site));
             detailed.add(d);
         }
         Statistics statistics = new Statistics(total, detailed);

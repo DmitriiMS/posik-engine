@@ -15,7 +15,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@Data
 @NoArgsConstructor
 public class DatabaseService {
     private SiteRepository siteRepository;
@@ -179,6 +178,41 @@ public class DatabaseService {
                     .stream().map(i -> i.getPage().getId()).collect(Collectors.toList());
         }
         return pageRepository.findAllByIdIn(pagesIds);
+    }
+
+    @Transactional
+    public boolean siteExistsByStatus(Status status) {
+        return siteRepository.existsByStatus(status);
+    }
+
+    @Transactional
+    public long siteCount() {
+        return siteRepository.count();
+    }
+
+    @Transactional
+    public long pageCount() {
+        return pageRepository.count();
+    }
+
+    @Transactional
+    public long lemmaCount() {
+        return lemmaRepository.count();
+    }
+
+    @Transactional
+    public long countPagesBySite(Site site) {
+        return pageRepository.countBySite(site);
+    }
+
+    @Transactional
+    public long countLemmasBySite(Site site) {
+        return lemmaRepository.countBySite(site);
+    }
+
+    @Transactional
+    public List<Field> getAllFields() {
+        return fieldRepository.findAll();
     }
 
 }
