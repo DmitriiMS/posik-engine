@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -134,6 +135,59 @@ public class CrawlerServiceTest {
         }});
 
         assertFalse(crawler.containsForbiddenComponents("mailto:me@test.test"));
+    }
+
+    @Nested
+    @DisplayName("Тесты на проверку года при фильтрации ссылок")
+    class YearTest {
+        int currentYear;
+
+        @BeforeEach
+        public void init() {
+            currentYear = LocalDate.now().getYear();
+        }
+
+        @Test
+        @DisplayName("isYearInParametersAndAcceptable - нет параметров в строке")
+        public void testIsYearInParametersAndAcceptableNoParameters() {
+            assertTrue(crawler.ifYearIsPresentIsItInAcceptableRange("http://test.test/test.html"));
+        }
+
+        @Test
+        @DisplayName("isYearInParametersAndAcceptable - нет года")
+        public void testIsYearInParametersAndAcceptableNoYear() {
+            assertTrue(crawler.ifYearIsPresentIsItInAcceptableRange("http://test.test/test?PAGE=10"));
+        }
+
+        @Test
+        @DisplayName("isYearInParametersAndAcceptable - есть год, вписывается в промежуток")
+        public void testIsYearInParametersAndAcceptableYearNormal() {
+            assertTrue(crawler.ifYearIsPresentIsItInAcceptableRange("http://test.test/test?PAGE=10&year=" + currentYear));
+        }
+
+        @Test
+        @DisplayName("isYearInParametersAndAcceptable - есть год, вписывается в промежуток, вариант 2")
+        public void testIsYearInParametersAndAcceptableYearNormalVar2() {
+            assertTrue(crawler.ifYearIsPresentIsItInAcceptableRange("http://test.test/test?year=" + (currentYear - 1) + "&PAGE=10&"));
+        }
+
+        @Test
+        @DisplayName("isYearInParametersAndAcceptable - есть год, меньше нижней границы")
+        public void testIsYearInParametersAndAcceptableYearTooEarly() {
+            assertFalse(crawler.ifYearIsPresentIsItInAcceptableRange("http://test.test/test?PAGE=10&year=" + (currentYear - 11)));
+        }
+
+        @Test
+        @DisplayName("isYearInParametersAndAcceptable - есть год, выше верхней границы")
+        public void testIsYearInParametersAndAcceptableYearTooFarInTheFuture() {
+            assertFalse(crawler.ifYearIsPresentIsItInAcceptableRange("http://test.test/test?PAGE=10&year=" + (currentYear + 5)));
+        }
+
+        @Test
+        @DisplayName("isYearInParametersAndAcceptable - есть год, формат странный")
+        public void testIsYearInParametersAndAcceptableYearWithStrangeFormat() {
+            assertFalse(crawler.ifYearIsPresentIsItInAcceptableRange("http://test.test/test?year=20&PAGE=10"));
+        }
     }
     
     @Test
@@ -417,15 +471,15 @@ public class CrawlerServiceTest {
 
             Lemma lemma1 = new Lemma();
             lemma1.setSite(site);
-            lemma1.setLemma("title");
-            lemma1.setFrequency(3);
-            lemma1.setRank(2.8);
+            lemma1.setLemma("parse");
+            lemma1.setFrequency(2);
+            lemma1.setRank(1.6);
 
             Lemma lemma2 = new Lemma();
             lemma2.setSite(site);
-            lemma2.setLemma("parse");
-            lemma2.setFrequency(2);
-            lemma2.setRank(1.6);
+            lemma2.setLemma("title");
+            lemma2.setFrequency(3);
+            lemma2.setRank(2.8);
 
             List<Lemma> expected = new ArrayList<>(){{
                 add(lemma1);
@@ -433,6 +487,8 @@ public class CrawlerServiceTest {
             }};
 
             List<Lemma> actual = crawler.getAndRankAllLemmas(doc);
+
+            actual.sort(Comparator.comparing(Lemma::getFrequency));
 
             assertAll("Массивы должны быть одинаковыми по equals и у лемм должны совпадать частоты и ранги",
                     () -> assertIterableEquals(expected, actual, "массивы должны совпадать"),

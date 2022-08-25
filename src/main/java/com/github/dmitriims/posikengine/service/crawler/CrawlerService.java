@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.RecursiveAction;
 
@@ -168,7 +169,7 @@ public class CrawlerService extends RecursiveAction {
         Set<String> filtered = new HashSet<>();
         for (String l : links) {
             if (context.getVisitedPages().contains(l) || !l.startsWith(context.getSite().getUrl()) || containsForbiddenComponents(l) ||
-                    !context.getRobotsRules().isAllowed(l)) {
+                    !ifYearIsPresentIsItInAcceptableRange(link) || !context.getRobotsRules().isAllowed(l)) {
                 context.getVisitedPages().add(l);
                 continue;
             }
@@ -184,6 +185,32 @@ public class CrawlerService extends RecursiveAction {
             }
         }
         return false;
+    }
+
+    boolean ifYearIsPresentIsItInAcceptableRange(String link) {
+        if (!link.contains("?")) {
+            return true;
+        }
+        link = link.toLowerCase();
+        int index = link.indexOf("year=");
+        if (index < 0) {
+            return true;
+        }
+        index += 5;
+        if(index + 4 > link.length()) {
+            return false;
+        }
+        try {
+            int yearInLink = Integer.parseInt(link.substring(index, index + 4));
+            int currentYear = LocalDate.now().getYear();
+            if( yearInLink < currentYear - 10 || yearInLink > currentYear + 3) {
+                return false;
+            }
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
+
+        return true;
     }
 
     String decodeLink(String link) {
