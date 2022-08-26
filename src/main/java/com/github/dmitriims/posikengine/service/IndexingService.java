@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -72,6 +71,7 @@ public class IndexingService {
                             commonContext.getDatabaseService().setSiteStatusToIndexed(pool.getKey());
                         }
                         log.info("indexing complete for site " + pool.getKey().getUrl());
+                        pool.getValue().shutdownNow();
                         it.remove();
                     }
                 }

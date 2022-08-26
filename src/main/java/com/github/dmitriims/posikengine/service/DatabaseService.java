@@ -2,7 +2,6 @@ package com.github.dmitriims.posikengine.service;
 
 import com.github.dmitriims.posikengine.model.*;
 import com.github.dmitriims.posikengine.repositories.*;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
