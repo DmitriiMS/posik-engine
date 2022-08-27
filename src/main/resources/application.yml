@@ -10,7 +10,10 @@ spring:
       use-new-id-generator-mappings: true
       ddl-auto: create
     generate-ddl: true
-    show-sql: false
+    show-sql: true
+    properties:
+      hibernate:
+        generate_statistics: true
 
 logging:
   file:
@@ -19,6 +22,9 @@ logging:
     dateformat: yyyy-MM-dd HH:mm:ss:SSS
   level:
     root: info
+    org.hibernate.stat: debug
+    org.hibernate.sql: debug
+    org.hibernate.cache: debug
 
 search-engine-properties:
   user-agent: PösikEngineSearchBot

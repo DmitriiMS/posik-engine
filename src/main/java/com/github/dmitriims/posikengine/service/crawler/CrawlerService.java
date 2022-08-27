@@ -101,7 +101,7 @@ public class CrawlerService extends RecursiveAction {
         Document document = response.parse();
         List<Lemma> allLemmas = getAndRankAllLemmas(document);
 
-        if (commonContext.isIndexing() && context.getNumberOfPagesToCrawl().decrementAndGet() > 0) {
+        if (commonContext.isIndexing() && context.getNumberOfPagesToCrawl().decrementAndGet() >= 0) {
             synchronized (commonContext.getDatabaseService()) {
                 commonContext.getDatabaseService().savePageToDataBase(context.getSite(), currentPage, allLemmas, commonContext);
             }
