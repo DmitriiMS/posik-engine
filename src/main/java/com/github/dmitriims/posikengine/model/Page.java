@@ -18,10 +18,17 @@ import java.util.Set;
 public class Page {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "page_sequence"
+    )
+    @SequenceGenerator(
+            name = "page_sequence",
+            allocationSize = 100
+    )
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "site_id")
     private Site site;
 
@@ -30,10 +37,10 @@ public class Page {
 
     private int code;
 
-    @Column(length = 1_000_000)
+    @Column(columnDefinition = "TEXT")
     private String content;
 
-    @OneToMany(mappedBy = "page")
+    @OneToMany(mappedBy = "page", fetch = FetchType.LAZY)
     @Cascade(CascadeType.DELETE)
     private Set<Index> indices;
 

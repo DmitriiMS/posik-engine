@@ -6,10 +6,6 @@ import com.github.dmitriims.posikengine.dto.statistics.StatisticsResponse;
 import com.github.dmitriims.posikengine.dto.statistics.Total;
 import com.github.dmitriims.posikengine.model.Site;
 import com.github.dmitriims.posikengine.model.Status;
-import com.github.dmitriims.posikengine.repositories.LemmaRepository;
-import com.github.dmitriims.posikengine.repositories.PageRepository;
-import com.github.dmitriims.posikengine.repositories.SiteRepository;
-import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;

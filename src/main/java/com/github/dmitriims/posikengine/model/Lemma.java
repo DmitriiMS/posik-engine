@@ -13,17 +13,26 @@ import java.util.Set;
 
 @Data
 @Entity
+@Table(uniqueConstraints = {
+        @UniqueConstraint(name = "uniqueSiteAndLemma", columnNames = {"site_id", "lemma"})
+})
 public class Lemma {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "lemma_sequence"
+    )
+    @SequenceGenerator(
+            name = "lemma_sequence",
+            allocationSize = 100
+    )
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "site_id")
     private Site site;
 
-    @Column(unique = true)
     private String lemma;
 
     private int frequency;
@@ -31,7 +40,7 @@ public class Lemma {
     @Transient
     private double rank;
 
-    @OneToMany(mappedBy = "lemma")
+    @OneToMany(mappedBy = "lemma", fetch = FetchType.LAZY)
     @Cascade(CascadeType.DELETE)
     private Set<Index> indices;
 

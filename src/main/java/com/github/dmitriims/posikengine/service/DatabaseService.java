@@ -2,6 +2,7 @@ package com.github.dmitriims.posikengine.service;
 
 import com.github.dmitriims.posikengine.model.*;
 import com.github.dmitriims.posikengine.repositories.*;
+import com.github.dmitriims.posikengine.repositories.LemmaRepository;
 import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,9 +38,10 @@ public class DatabaseService {
     @Transactional
     public void savePageToDataBase(Site site, Page page, List<Lemma> lemmas, CommonContext commonContext) {
         Page savedPage = pageRepository.findBySiteAndPathEquals(site, page.getPath());
-        if (savedPage == null) {
-            savedPage = pageRepository.save(page);
+        if (savedPage != null) {
+            return; //TODO: проверить возможность этого случая, если да, то в идеале кидать исключение
         }
+        savedPage = pageRepository.save(page);
         saveNewLemmasAndIndexes(savedPage, lemmas);
         setIndexingStatusOnCompletion(site, commonContext);
     }
@@ -73,31 +75,34 @@ public class DatabaseService {
     }
 
     private void saveNewLemmasAndIndexes(Page page, List<Lemma> newLemmas) {
-        for (Lemma newLemma : newLemmas) {
-            Lemma lemmaToUpdate = lemmaRepository.findByLemma(newLemma.getLemma());
-            if (lemmaToUpdate == null) {
-                lemmaToUpdate = newLemma;
-            } else {
-                lemmaToUpdate.setFrequency(lemmaToUpdate.getFrequency() + newLemma.getFrequency());
-                lemmaToUpdate.setRank(lemmaToUpdate.getRank() + newLemma.getRank());
-            }
-            Lemma savedLemma = lemmaRepository.save(lemmaToUpdate);
-
-            constructAndSaveIndexRecord(page, savedLemma, newLemma.getRank(), newLemma.getFrequency());
-        }
+        List<Lemma> lemmasFromDB = lemmaRepository.findAllBySiteAndLemmaIn(page.getSite(), newLemmas.stream().map(Lemma::getLemma).collect(Collectors.toList()));
+        List<Lemma> savedLemmas = saveLemmas(newLemmas, lemmasFromDB);
+        saveIndexes(page, newLemmas, savedLemmas);
     }
 
-    private void constructAndSaveIndexRecord(Page page, Lemma lemma, double rank, int count) {
-        Index indexToSave = new Index(page, lemma, rank, count);
-        Index indexToUpdate = indexRepository.findByPage_IdAndLemma_Id(page.getId(), lemma.getId());
-        if (indexToUpdate == null) {
-            indexToUpdate = indexToSave;
-        } else {
-            indexToUpdate.setRank(indexToSave.getRank());
-            indexToUpdate.setCount(indexToSave.getCount());
+    private List<Lemma> saveLemmas(List<Lemma> newLemmas, List<Lemma> lemmasFromDB) {
+        List<Lemma> lemmasToFlush = new ArrayList<>();
+        for (Lemma newLemma : newLemmas) {
+            int j = lemmasFromDB.indexOf(newLemma);
+            if (j < 0) {
+                lemmasToFlush.add(newLemma);
+                continue;
+            }
+            Lemma oldLemma = lemmasFromDB.get(j);
+            oldLemma.setFrequency(oldLemma.getFrequency() + newLemma.getFrequency());
+            lemmasToFlush.add(oldLemma);
         }
+        return lemmaRepository.saveAllAndFlush(lemmasToFlush);
+    }
 
-        indexRepository.save(indexToUpdate);
+    private void saveIndexes (Page page, List<Lemma> newLemmas, List<Lemma> savedLemmas) {
+        List<Index> newIndexes = new ArrayList<>();
+        for (Lemma lemma : savedLemmas) {
+            int i = newLemmas.indexOf(lemma);
+            Lemma originalLemma = newLemmas.get(i);
+            newIndexes.add(new Index(page, lemma, originalLemma.getRank(),originalLemma.getFrequency()));
+        }
+        indexRepository.saveAllAndFlush(newIndexes);
     }
 
     @Transactional

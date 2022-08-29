@@ -207,6 +207,38 @@ public class CrawlerServiceTest {
     }
 
     @Test
+    @DisplayName("filterLinks - не добавлять - ссылка со слешем, но в посещённых без слеша")
+    public void testFilterLinksSlashedInputButNoSlashInVisited() {
+        Mockito.when(crawlerContext.getVisitedPages()).thenReturn(new HashSet<>() {{
+            add("http://test.test/1");
+        }});
+
+        Set<String> expected = new HashSet<>();
+        List<String> input = new ArrayList<>(){{
+            add("http://test.test/1/");
+        }};
+        Set<String> actual = crawler.filterLinks(input);
+
+        assertIterableEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName("filterLinks - не добавлять - ссылка без слеша, но в посещённых со слешем")
+    public void testFilterLinksNonslashedInputButSlashInVisited() {
+        Mockito.when(crawlerContext.getVisitedPages()).thenReturn(new HashSet<>() {{
+            add("http://test.test/1/");
+        }});
+
+        Set<String> expected = new HashSet<>();
+        List<String> input = new ArrayList<>(){{
+            add("http://test.test/1");
+        }};
+        Set<String> actual = crawler.filterLinks(input);
+
+        assertIterableEquals(expected, actual);
+    }
+
+    @Test
     @DisplayName("filterLinks - не добавлять - не внутренняя")
     public void testFilterLinksNotInternal() {
         Mockito.when(crawlerContext.getVisitedPages()).thenReturn(new HashSet<>());

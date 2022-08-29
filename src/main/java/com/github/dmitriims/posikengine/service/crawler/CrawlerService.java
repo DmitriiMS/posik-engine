@@ -27,17 +27,21 @@ public class CrawlerService extends RecursiveAction {
     public CrawlerService(String link, CrawlerContext context, CommonContext commonContext) {
         this.commonContext = commonContext;
         this.context = context;
-        this.link = decodeLink(link); //TODO: посмотреть, можно ли делать проверку
+        this.link = cleanLink(decodeLink(link)); //TODO: посмотреть, можно ли делать проверку перед decodeLink
         context.getVisitedPages().add(link);
     }
 
     public CrawlerService(CrawlerContext context, CommonContext commonContext) {
         this.commonContext = commonContext;
         this.context = context;
-        this.link = decodeLink(context.getSite().getUrl());
+        this.link = cleanLink(decodeLink(context.getSite().getUrl()));
         context.getVisitedPages().add(link);
 
         log.info("started task for site " + context.getSite().getUrl());
+    }
+
+    private String cleanLink(String link) {
+        return link.replaceAll("\\\\", "").strip();
     }
 
     @Override
@@ -68,6 +72,7 @@ public class CrawlerService extends RecursiveAction {
                             context.setSite(commonContext.getDatabaseService().setSiteStatusToIndexing(context.getSite()));
                         }
                     }
+                    log.info("done cleanup for site " + context.getSite().getUrl());
                 }
             } else if (!commonContext.isIndexing()) {
                 return;
@@ -168,7 +173,7 @@ public class CrawlerService extends RecursiveAction {
     Set<String> filterLinks(List<String> links) {
         Set<String> filtered = new HashSet<>();
         for (String l : links) {
-            if (context.getVisitedPages().contains(l) || !l.startsWith(context.getSite().getUrl()) || containsForbiddenComponents(l) ||
+            if (wasVisited(l) || !l.startsWith(context.getSite().getUrl()) || containsForbiddenComponents(l) ||
                     !ifYearIsPresentIsItInAcceptableRange(link) || !context.getRobotsRules().isAllowed(l)) {
                 context.getVisitedPages().add(l);
                 continue;
@@ -176,6 +181,17 @@ public class CrawlerService extends RecursiveAction {
             filtered.add(l);
         }
         return filtered;
+    }
+
+    boolean wasVisited(String link) {
+        String paired;
+        if (link.endsWith("/")) {
+            paired = link.substring(0, link.length() - 1);
+        } else {
+            paired = link.concat("/");
+        }
+
+        return context.getVisitedPages().contains(link) || context.getVisitedPages().contains(paired);
     }
 
     boolean containsForbiddenComponents(String link) {

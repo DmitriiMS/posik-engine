@@ -8,6 +8,7 @@ import org.hibernate.annotations.CascadeType;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Set;
 
 @Setter
@@ -16,7 +17,13 @@ import java.util.Set;
 public class Site {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "site_sequence"
+    )
+    @SequenceGenerator(
+            name = "site_sequence"
+    )
     private Long id;
 
     @Column(unique = true)
@@ -33,11 +40,11 @@ public class Site {
     @Column(name = "last_error")
     private String lastError;
 
-    @OneToMany(mappedBy = "site")
+    @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)
     @Cascade(CascadeType.DELETE)
     private Set<Page> pages;
 
-    @OneToMany(mappedBy = "site")
+    @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)
     @Cascade(CascadeType.DELETE)
     private Set<Lemma> lemmas;
 
@@ -55,5 +62,18 @@ public class Site {
                 ", statusTime=" + statusTime +
                 ", lastError='" + lastError + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Site)) return false;
+        Site site = (Site) o;
+        return Objects.equals(url, site.url);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url);
     }
 }
