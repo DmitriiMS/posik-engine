@@ -27,22 +27,19 @@ public class CrawlerService extends RecursiveAction {
     public CrawlerService(String link, CrawlerContext context, CommonContext commonContext) {
         this.commonContext = commonContext;
         this.context = context;
-        this.link = cleanLink(decodeLink(link)); //TODO: посмотреть, можно ли делать проверку перед decodeLink
+        this.link = decodeLink(link); //TODO: посмотреть, можно ли делать проверку перед decodeLink
         context.getVisitedPages().add(link);
     }
 
     public CrawlerService(CrawlerContext context, CommonContext commonContext) {
         this.commonContext = commonContext;
         this.context = context;
-        this.link = cleanLink(decodeLink(context.getSite().getUrl()));
+        this.link = decodeLink(context.getSite().getUrl());
         context.getVisitedPages().add(link);
 
         log.info("started task for site " + context.getSite().getUrl());
     }
 
-    private String cleanLink(String link) {
-        return link.replaceAll("\\\\", "").strip();
-    }
 
     @Override
     protected void compute() {
@@ -98,7 +95,7 @@ public class CrawlerService extends RecursiveAction {
 
     Set<String> processOnePage(String url) throws IOException {
         Connection.Response response = getResponseFromLink(url);
-        if (!response.contentType().startsWith("text")) {
+        if (response == null || !response.contentType().startsWith("text")) {
             return new HashSet<>();
         }
         Page currentPage = getPageFromResponse(response);
@@ -123,14 +120,19 @@ public class CrawlerService extends RecursiveAction {
         return new HashSet<>();
     }
 
-    Connection.Response getResponseFromLink(String url) throws IOException {
-        return Jsoup.connect(url)
-                .userAgent(commonContext.getUserAgent())
-                .referrer("http://www.google.com")
-                .timeout(60 * 1000)
-                .ignoreContentType(true)
-                .ignoreHttpErrors(true)
-                .execute();
+    Connection.Response getResponseFromLink(String url) {
+        try {
+            return Jsoup.connect(url)
+                    .userAgent(commonContext.getUserAgent())
+                    .referrer("http://www.google.com")
+                    .timeout(60 * 1000)
+                    .ignoreContentType(true)
+                    .ignoreHttpErrors(true)
+                    .execute();
+        } catch (IOException ioe) {
+            log.warn(ioe.getMessage());
+            return null;
+        }
     }
 
     Page getPageFromResponse(Connection.Response response) {

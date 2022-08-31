@@ -1,5 +1,6 @@
 package com.github.dmitriims.posikengine.service;
 
+import com.github.dmitriims.posikengine.dto.PageDTO;
 import com.github.dmitriims.posikengine.model.*;
 import com.github.dmitriims.posikengine.repositories.*;
 import com.github.dmitriims.posikengine.repositories.LemmaRepository;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.Tuple;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -160,7 +162,7 @@ public class DatabaseService {
 
     @Transactional
     public void deleteSiteInformation(Site site) {
-        List<Long> pageIds = pageRepository.getAllIdsBySiteId(site.getId());
+        List<Long> pageIds = pageRepository.getAllIdsBySiteId(Collections.singletonList(site.getId()));
         for(long id : pageIds) {
             indexRepository.deleteAllByPage_Id(id);
         }
@@ -169,19 +171,37 @@ public class DatabaseService {
     }
 
     @Transactional
-    public List<Lemma> filterPopularLemmasOut(List<Site> sites, List<String> lemmas, double threshold) {
-        return lemmaRepository.filterVeryPopularLemmas(sites, lemmas, threshold);
+    public List<String> filterPopularLemmasOut(List<Site> sites, List<String> lemmas, double threshold) {
+        List<Tuple> tuples = lemmaRepository.filterVeryPopularLemmas(
+                sites.stream().map(Site::getId).collect(Collectors.toList()),
+                lemmas,
+                threshold);
+        return tuples.stream()
+                .map(t -> t.get(0, String.class))
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public List<Page> getPagesWithLemmas(List<Long> lemmasIds, List<Site> sites) {
-        List<Long> pagesIds = pageRepository.findAllBySiteIn(sites)
-                .stream().map(Page::getId).collect(Collectors.toList());
-        for (Long lemmaId : lemmasIds) {
-            pagesIds = indexRepository.findAllByPage_IdInAndLemma_Id(pagesIds, lemmaId)
-                    .stream().map(i -> i.getPage().getId()).collect(Collectors.toList());
+    public List<PageDTO> getSortedRelevantPageDTOs(List<String> lemmas, List<Long> sites, int limit) {
+        List<Long> relevantPages = new ArrayList<>();
+        for (String lemma : lemmas) {
+            if (relevantPages.isEmpty()) {
+                relevantPages = pageRepository.getAllIdsBySiteId(sites);
+            }
+            relevantPages = indexRepository.findPageIdsBySiteInAndLemmaAndPageIdsIn(sites, lemma, relevantPages);
+            if(relevantPages.isEmpty()) {
+                return new ArrayList<>();
+            }
         }
-        return pageRepository.findAllByIdIn(pagesIds);
+        List<Tuple> tuples = pageRepository.getLimitedSortedPagesByLemmasAndPageIds(lemmas, relevantPages, limit);
+        return tuples.stream()
+                .map(t -> new PageDTO(
+                        t.get(0, String.class),
+                        t.get(1, String.class),
+                        t.get(2, String.class),
+                        t.get(3, String.class),
+                        t.get(4, Double.class)))
+                .collect(Collectors.toList());
     }
 
     @Transactional

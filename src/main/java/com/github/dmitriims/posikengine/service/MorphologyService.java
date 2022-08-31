@@ -46,7 +46,7 @@ public class MorphologyService {
         return dictionaryWithCount;
     }
 
-    List<String> getNormalFormOfAWord(String word) {
+    public List<String> getNormalFormOfAWord(String word) {
         if (russianLuceneMorph.checkString(word) && !isRussianGarbage(russianLuceneMorph.getMorphInfo(word))) {
             return russianLuceneMorph.getNormalForms(word);
         } else if (englishLuceneMorph.checkString(word) && !isEnglishGarbage(englishLuceneMorph.getMorphInfo(word))) {
@@ -57,7 +57,7 @@ public class MorphologyService {
         return new ArrayList<>();
     }
 
-    String[] splitStringToLowercaseWords(String input) {
+    public String[] splitStringToLowercaseWords(String input) {
         return Arrays.stream(input.toLowerCase(Locale.ROOT)
                         .replaceAll(NOT_A_WORD_PATTERN, " ")
                         .trim()

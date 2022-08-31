@@ -1,21 +1,14 @@
 package com.github.dmitriims.posikengine.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class PageDTO {
-    private String site;
-    private String siteName;
-    private String uri;
-    private String title;
-    private String snippet;
-    private double relevance;
-
-    @Override
-    public String toString() {
-        return "uri: " + this.getUri() + "\n" +
-                "relevance: " + this.getRelevance() + "\n" +
-                "title: " + this.getTitle() + "\n" +
-                "snippet:\n" + this.getSnippet() + "\n";
-    }
+    String siteUrl;
+    String siteName;
+    String path;
+    String content;
+    double relevance;
 }

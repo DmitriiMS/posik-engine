@@ -8,7 +8,7 @@ spring:
     hibernate:
       dialect: org.hibernate.dialect.PostgreSQLDialect
       use-new-id-generator-mappings: true
-      ddl-auto: create
+      ddl-auto: update
     generate-ddl: true
     show-sql: false
     properties:
@@ -38,15 +38,21 @@ search-engine-properties:
 #      -
 #        url: https://nikoartgallery.com
 #        name: Галерея искусств Niko
-#      -
-#        url: https://www.lutherancathedral.ru
-#        name: Собор Петра и Павла
+      -
+        url: https://www.lutherancathedral.ru
+        name: Собор Петра и Павла
 #      -
 #        url: https://et-cetera.ru/mobile
 #        name: Театр «Et Cetera»
       -
         url: https://skillbox.ru/
         name: Skillbox
+#      -
+#        url: https://lenta.ru
+#        name: lenta.ru
+#      -
+#        url: https://dimonvideo.ru/
+#        name: DimonVideo
     fields:
       -
         name: title

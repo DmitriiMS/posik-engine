@@ -1,7 +1,7 @@
 package com.github.dmitriims.posikengine.api;
 
 import com.github.dmitriims.posikengine.dto.IndexingStatusResponse;
-import com.github.dmitriims.posikengine.dto.PageDTO;
+import com.github.dmitriims.posikengine.dto.PageResponse;
 import com.github.dmitriims.posikengine.dto.SearchRequest;
 import com.github.dmitriims.posikengine.dto.SearchResponse;
 import com.github.dmitriims.posikengine.dto.statistics.StatisticsResponse;
@@ -9,7 +9,7 @@ import com.github.dmitriims.posikengine.exceptions.IndexingStatusException;
 import com.github.dmitriims.posikengine.exceptions.SearchException;
 import com.github.dmitriims.posikengine.exceptions.UnknownIndexingStatusException;
 import com.github.dmitriims.posikengine.service.IndexingService;
-import com.github.dmitriims.posikengine.service.SearchService;
+import com.github.dmitriims.posikengine.service.search.SearchService;
 import com.github.dmitriims.posikengine.service.StatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +87,7 @@ public class ApiController {
         SearchRequest request = new SearchRequest(query, site, offset, limit);
         Logger log = LoggerFactory.getLogger(ApiController.class);
         log.info(request.toString());
-        List<PageDTO> data =  searchService.search(request);
+        List<PageResponse> data =  searchService.search(request);
         SearchResponse response = new SearchResponse();
         response.setResult(true);
         response.setError("");

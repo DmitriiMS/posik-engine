@@ -11,5 +11,5 @@ public class SearchResponse {
     private boolean result;
     private String error;
     private int count;
-    private List<PageDTO> data;
+    private List<PageResponse> data;
 }
