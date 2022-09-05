@@ -193,7 +193,7 @@ public class DatabaseService {
                 return new ArrayList<>();
             }
         }
-        List<Tuple> tuples = pageRepository.getLimitedSortedPagesByLemmasAndPageIds(lemmas, relevantPages, limit);
+        List<Tuple> tuples = pageRepository.getLimitedSortedPagesByLemmasAndPageIds(lemmas, relevantPages, limit, 0);
         return tuples.stream()
                 .map(t -> new PageDTO(
                         t.get(0, String.class),

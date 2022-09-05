@@ -27,7 +27,7 @@ public class SearchService {
     }
 
     private static final double THRESHOLD = 0.9;
-    private static final Pattern END_OF_SENTENCE = Pattern.compile("[\\.!?]\\s*");
+    private static final String END_OF_SENTENCE = "[\\.!?]\\s*";
 
     private final Logger log = LoggerFactory.getLogger(SearchService.class);
 
@@ -66,8 +66,9 @@ public class SearchService {
         double maxRelevance = foundPages.get(0).getRelevance();
         ForkJoinPool pool = ForkJoinPool.commonPool();
         PageProcessor pp = new PageProcessor(foundPages, searchWordsNormalForms, maxRelevance, 4, commonContext.getMorphologyService(), END_OF_SENTENCE);
-        return pool.submit(pp).join();
+        List<PageResponse> responses =  pool.submit(pp).join();
+        log.info("search for request \"" + request.getQuery() + "\" complete, found " + responses.size() + " pages");
+        return responses;
     }
-
 
 }

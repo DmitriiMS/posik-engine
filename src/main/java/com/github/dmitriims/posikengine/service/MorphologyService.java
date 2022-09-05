@@ -1,5 +1,6 @@
 package com.github.dmitriims.posikengine.service;
 
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -15,7 +16,7 @@ import java.util.*;
 @Service
 public class MorphologyService {
 
-
+    @Getter
     private String NOT_A_WORD_PATTERN;
     private LuceneMorphology russianLuceneMorph;
     private LuceneMorphology englishLuceneMorph;

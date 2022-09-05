@@ -31,10 +31,12 @@ public interface PageRepository extends JpaRepository<Page, Long> {
                     "where l.lemma in :lemmas " +
                     "and p.id in :pages " +
                     "order by relevance desc " +
-                    "limit :limit",
+                    "limit :limit " +
+                    "offset :offset",
             nativeQuery = true
     )
     List<Tuple> getLimitedSortedPagesByLemmasAndPageIds(@Param("lemmas") List<String> lemmas,
                                                       @Param("pages") List<Long> pageIds,
-                                                      @Param("limit") int limit);
+                                                      @Param("limit") int limit,
+                                                      @Param("offset") int offset);
 }
