@@ -82,7 +82,7 @@ public class PageProcessor  extends RecursiveTask<List<PageResponse>> {
         boolean isFound = false;
         EVERYTHING:
         for (String sentence : sentences) {
-            for (String word : splitSentenceIntoWords((sentence))) {
+            for (String word : splitSentenceIntoWords(sentence)) {
                 iterator = iterableSearchTerms.listIterator();
                 String lowercaseWord = word.toLowerCase(Locale.ROOT);
                 while(iterator.hasNext()) {

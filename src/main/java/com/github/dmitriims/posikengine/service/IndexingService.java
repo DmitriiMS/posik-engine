@@ -30,11 +30,8 @@ import java.util.stream.Collectors;
 @Service
 public class IndexingService {
 
-    @Resource
     private UserProvidedData userProvidedData;
-    @Resource
     private SimpleRobotRulesParser robotsParser;
-    @Resource
     private CommonContext commonContext;
 
     private Map<Site, ForkJoinPool> sitePools;
@@ -42,6 +39,12 @@ public class IndexingService {
     private Thread indexingMonitorTread;
 
     private final Logger log = LoggerFactory.getLogger(IndexingService.class);
+
+    public IndexingService(UserProvidedData userProvidedData, SimpleRobotRulesParser robotsParser, CommonContext commonContext) {
+        this.userProvidedData = userProvidedData;
+        this.robotsParser = robotsParser;
+        this.commonContext = commonContext;
+    }
 
     Runnable indexingMonitor = () -> {
         try {

@@ -12,7 +12,6 @@ public class Statistics {
     private Total total;
     private List<Detailed> detailed;
 
-    @Autowired
     public Statistics(Total total, List<Detailed> detailed) {
         this.total = total;
         this.detailed = detailed;
