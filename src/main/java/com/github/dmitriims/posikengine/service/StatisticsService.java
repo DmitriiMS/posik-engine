@@ -6,16 +6,18 @@ import com.github.dmitriims.posikengine.dto.statistics.StatisticsResponse;
 import com.github.dmitriims.posikengine.dto.statistics.Total;
 import com.github.dmitriims.posikengine.model.Site;
 import com.github.dmitriims.posikengine.model.Status;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class StatisticsService {
-    @Resource
+
     DatabaseService dbService;
 
     public StatisticsResponse getStatistics() {
@@ -34,6 +36,7 @@ public class StatisticsService {
                     dbService.countLemmasBySite(site));
             detailed.add(d);
         }
+        detailed.sort(Comparator.comparing(Detailed::getName));
         Statistics statistics = new Statistics(total, detailed);
         return new StatisticsResponse(true, statistics);
     }
