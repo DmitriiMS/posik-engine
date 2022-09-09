@@ -87,13 +87,7 @@ public class ApiController {
         SearchRequest request = new SearchRequest(query, site, offset, limit);
         Logger log = LoggerFactory.getLogger(ApiController.class);
         log.info(request.toString());
-        List<PageResponse> data =  searchService.search(request);
-        SearchResponse response = new SearchResponse();
-        response.setResult(true);
-        response.setError("");
-        response.setData(data);
-        response.setCount(data.size());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(searchService.search(request));
     }
 
 }

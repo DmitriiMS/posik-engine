@@ -16,7 +16,6 @@ import java.util.*;
 @Service
 public class MorphologyService {
 
-    @Getter
     private String NOT_A_WORD_PATTERN;
     private LuceneMorphology russianLuceneMorph;
     private LuceneMorphology englishLuceneMorph;
@@ -61,6 +60,13 @@ public class MorphologyService {
     public String[] splitStringToLowercaseWords(String input) {
         return Arrays.stream(input.toLowerCase(Locale.ROOT)
                         .replaceAll(NOT_A_WORD_PATTERN, " ")
+                        .trim()
+                        .split(" "))
+                .filter(s -> !s.isBlank()).toArray(String[]::new);
+    }
+
+    public String[] splitStringToWords(String sentence) {
+        return Arrays.stream(sentence.replaceAll(NOT_A_WORD_PATTERN, " ")
                         .trim()
                         .split(" "))
                 .filter(s -> !s.isBlank()).toArray(String[]::new);

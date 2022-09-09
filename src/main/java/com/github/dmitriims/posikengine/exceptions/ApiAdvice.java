@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import javax.annotation.Resource;
+
 @ControllerAdvice
 public class ApiAdvice {
 

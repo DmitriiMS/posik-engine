@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class PageProcessor  extends RecursiveTask<List<PageResponse>> {
 
     private List<PageDTO> pagesToProcess;
-    private String[] searchWordsNormalForms;
+    private List<String> searchLemmas;
     private double maxRelevance;
     private int chunkSize;
     private MorphologyService morphologyService;
@@ -42,7 +42,7 @@ public class PageProcessor  extends RecursiveTask<List<PageResponse>> {
             if (endIndex > pagesToProcess.size()) {
                 endIndex = pagesToProcess.size();
             }
-            subtasks.add(new PageProcessor(pagesToProcess.subList(i, endIndex), searchWordsNormalForms, maxRelevance, chunkSize, morphologyService, END_OF_SENTENCE));
+            subtasks.add(new PageProcessor(pagesToProcess.subList(i, endIndex), searchLemmas, maxRelevance, chunkSize, morphologyService, END_OF_SENTENCE));
         }
         return subtasks;
     }
@@ -50,14 +50,14 @@ public class PageProcessor  extends RecursiveTask<List<PageResponse>> {
     List<PageResponse> processPages() {
         List<PageResponse> result = new ArrayList<>();
         for (PageDTO page : pagesToProcess) {
-            PageResponse pageResponse = convertPageDtoToResponse(page, maxRelevance, searchWordsNormalForms);
+            PageResponse pageResponse = convertPageDtoToResponse(page, maxRelevance, searchLemmas);
             result.add(pageResponse);
         }
 
         return result;
     }
 
-    PageResponse convertPageDtoToResponse(PageDTO page, double maxRelevance, String[] searchWordsNormalForms) {
+    PageResponse convertPageDtoToResponse(PageDTO page, double maxRelevance, List<String> searchLemmas) {
 
         PageResponse pageResponse = new PageResponse();
         Document contents = Jsoup.parse(page.getContent());
@@ -66,23 +66,22 @@ public class PageProcessor  extends RecursiveTask<List<PageResponse>> {
         pageResponse.setSiteName(page.getSiteName());
         pageResponse.setUri(page.getPath());
         pageResponse.setTitle(contents.select("title").text());
-        pageResponse.setSnippet(getSnippetFromPage(contents.select("body").text(), searchWordsNormalForms));
+        pageResponse.setSnippet(getSnippetFromPage(contents.select("body").text(), searchLemmas));
         pageResponse.setRelevance(page.getRelevance() / maxRelevance);
 
         return pageResponse;
     }
 
-    String getSnippetFromPage(String text, String[] searchWordsNormalForms) {
+    String getSnippetFromPage(String text, List<String> searchLemmas) {
         List<String> result = new ArrayList<>();
 
-        List<String> iterableSearchTerms = new ArrayList<>(List.of(searchWordsNormalForms));
+        List<String> iterableSearchTerms = new ArrayList<>(searchLemmas);
 
         String[] sentences = text.split(END_OF_SENTENCE);
         ListIterator<String> iterator;
         boolean isFound = false;
-        EVERYTHING:
         for (String sentence : sentences) {
-            for (String word : splitSentenceIntoWords(sentence)) {
+            for (String word : morphologyService.splitStringToWords(sentence)) {
                 iterator = iterableSearchTerms.listIterator();
                 String lowercaseWord = word.toLowerCase(Locale.ROOT);
                 while(iterator.hasNext()) {
@@ -96,24 +95,16 @@ public class PageProcessor  extends RecursiveTask<List<PageResponse>> {
                         iterator.remove();
                     }
                 }
-                if (isFound) {
-                    isFound = false;
-                    result.add(sentence);
-                    if (iterableSearchTerms.isEmpty()) {
-                        break EVERYTHING;
-                    }
+            }
+            if (isFound) {
+                isFound = false;
+                result.add(sentence);
+                if (iterableSearchTerms.isEmpty()) {
                     break;
                 }
             }
         }
 
         return String.join("<...>", result);
-    }
-
-    String[] splitSentenceIntoWords(String sentence) {
-        return Arrays.stream(sentence.replaceAll(morphologyService.getNOT_A_WORD_PATTERN(), " ")
-                        .trim()
-                        .split(" "))
-                .filter(s -> !s.isBlank()).toArray(String[]::new);
     }
 }
