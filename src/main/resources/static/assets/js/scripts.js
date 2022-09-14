@@ -1532,6 +1532,11 @@ var API = function(){
                     if ($this.next('.API-error').length) {
                         $this.next('.API-error').remove();
                     }
+                    if ($this.next('.API-success').length) {
+                        $this.next('.API-success').text(result.message);
+                    } else {
+                        $this.after('<div class="API-success">' + result.message + '</div>');
+                    }
                     var $searchResults = $('.SearchResult'),
                         $content = $searchResults.find('.SearchResult-content');
                     if (data.offset === 0) {

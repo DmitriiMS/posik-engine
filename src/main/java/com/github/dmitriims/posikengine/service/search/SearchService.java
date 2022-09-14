@@ -40,6 +40,8 @@ public class SearchService {
         List<PageDTO> foundPages;
         String message = "";
 
+        long searchStartTime = System.nanoTime();
+
         if (request.getSite() == null) {
             sitesToSearch = commonContext.getDatabaseService().getAllSites();
         } else {
@@ -75,8 +77,8 @@ public class SearchService {
 
         if (filteredLemmas.size() < searchWordsNormalForms.length) {
             String correctedQuery = correctQuery(filteredLemmas, request.getQuery());
-            message = "По запросу \'" + request.getQuery() + "\' ничего не найдено. " +
-                    "Скорректированный запрос: " + correctedQuery;
+            message = "По запросу '" + request.getQuery() + "' ничего не найдено. " +
+                    "Скорректированный запрос: '" + correctedQuery + "'.";
             log.info(message);
         }
 
@@ -87,7 +89,7 @@ public class SearchService {
 
         SearchResponse response = new SearchResponse();
         response.setResult(true);
-        response.setError(message);
+        response.setMessage(message + String.format(" Время поиска : %.3f сек.", (System.nanoTime() - searchStartTime)/1000000000.));
         response.setData(searchResults);
         response.setCount(searchResults.size());
 

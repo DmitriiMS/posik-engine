@@ -9,7 +9,7 @@ import java.util.List;
 public class SearchResponse {
     @NotEmpty
     private boolean result;
-    private String error;
+    private String message;
     private int count;
     private List<PageResponse> data;
 }
