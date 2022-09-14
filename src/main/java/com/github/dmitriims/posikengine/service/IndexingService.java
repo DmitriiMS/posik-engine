@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,7 +58,7 @@ public class IndexingService {
                 while (it.hasNext()) {
                     Map.Entry<Site, ForkJoinPool> pool = it.next();
 
-                    if(pool.getValue().isShutdown()) {
+                    if (pool.getValue().isShutdown()) {
                         log.info("waiting for workers to finish all current tasks for site " + pool.getKey().getUrl());
                         if (!pool.getValue().awaitTermination(10, TimeUnit.SECONDS)) {
                             log.warn("pool didn't terminate within timeout, releasing lock on the front anyway");
@@ -150,7 +149,7 @@ public class IndexingService {
 
         String siteUrl = "";
         for (String userUrl : userProvidedSitesUrls) {
-            if(url.startsWith(userUrl)) {
+            if (url.startsWith(userUrl)) {
                 siteUrl = userUrl;
             }
         }
@@ -179,7 +178,7 @@ public class IndexingService {
         }
 
         try (InputStream inStream = robots.openStream();
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream()) {
+             ByteArrayOutputStream outStream = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[4096];
             int n = 0;
             while ((n = inStream.read(buffer)) > 0) {
@@ -216,7 +215,7 @@ public class IndexingService {
         sitePools.get(context.getSite()).execute(crawler);
     }
 
-    public CrawlerContext generateCrawlerContext (Site site, int limit, List<Field> fields) throws IOException {
+    public CrawlerContext generateCrawlerContext(Site site, int limit, List<Field> fields) throws IOException {
         String topLevelSite = getTopLevelUrl(site.getUrl());
         ForkJoinPool pool = new ForkJoinPool();
         BaseRobotRules robotRules = robotsParser.parseContent(topLevelSite + "/robots.txt", getRobotsTxt(topLevelSite), "text/plain", commonContext.getUserAgent());

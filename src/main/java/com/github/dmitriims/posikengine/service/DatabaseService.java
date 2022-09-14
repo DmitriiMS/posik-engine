@@ -123,7 +123,7 @@ public class DatabaseService {
         siteToUpdate.setStatus(Status.INDEXED);
         siteToUpdate.setLastError("");
         siteToUpdate.setStatusTime(LocalDateTime.now());
-        site = siteRepository.save(siteToUpdate);
+        site = siteRepository.saveAndFlush(siteToUpdate);
         return site;
     }
 
@@ -133,7 +133,7 @@ public class DatabaseService {
         siteToUpdate.setStatus(Status.INDEXING);
         siteToUpdate.setLastError("");
         siteToUpdate.setStatusTime(LocalDateTime.now());
-        site = siteRepository.save(siteToUpdate);
+        site = siteRepository.saveAndFlush(siteToUpdate);
         return site;
     }
 
@@ -143,7 +143,7 @@ public class DatabaseService {
         siteToUpdate.setStatus(Status.FAILED);
         siteToUpdate.setLastError(error);
         siteToUpdate.setStatusTime(LocalDateTime.now());
-        siteRepository.save(siteToUpdate);
+        siteRepository.saveAndFlush(siteToUpdate);
     }
 
     @Transactional

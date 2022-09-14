@@ -1,7 +1,7 @@
 package com.github.dmitriims.posikengine.exceptions;
 
 import com.github.dmitriims.posikengine.dto.ErrorResponse;
-import com.github.dmitriims.posikengine.service.DatabaseService;
+import com.github.dmitriims.posikengine.service.CommonContext;
 import com.github.dmitriims.posikengine.service.IndexingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,11 +14,11 @@ import java.net.ConnectException;
 public class ApiAdvice {
 
     private IndexingService indexingService;
-    private DatabaseService databaseService;
+    private CommonContext commonContext;
 
-    public ApiAdvice(IndexingService indexingService, DatabaseService databaseService) {
+    public ApiAdvice(IndexingService indexingService, CommonContext commonContext) {
         this.indexingService = indexingService;
-        this.databaseService = databaseService;
+        this.commonContext = commonContext;
     }
 
     @ExceptionHandler(IndexingStatusException.class)
@@ -32,7 +32,6 @@ public class ApiAdvice {
     public ResponseEntity<ErrorResponse> handleUnknownIndexingException(UnknownIndexingStatusException uise) {
         indexingService.setIndexing(false);
         indexingService.getIndexingMonitorTread().interrupt();
-        databaseService.setAllSiteStatusesToFailed("неизвестная ошибка индексирования");
 
         return new ResponseEntity<>(
                 new ErrorResponse(uise.getLocalizedMessage()),
@@ -48,6 +47,10 @@ public class ApiAdvice {
 
     @ExceptionHandler(ConnectException.class)
     public ResponseEntity<ErrorResponse> handleConnectException(ConnectException ce) {
+        if (indexingService.isIndexing()) {
+            indexingService.setIndexing(false);
+//TODO: тут надо сохранить куда-то сообщение об ошибке и тот факт, что прошлая процедура обломилась и при восстановлении соединения обновить информацию в бд
+        }
         return new ResponseEntity<>(
                 new ErrorResponse(ce.getLocalizedMessage()),
                 HttpStatus.INTERNAL_SERVER_ERROR);
