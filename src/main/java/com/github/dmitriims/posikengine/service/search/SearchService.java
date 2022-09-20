@@ -28,7 +28,7 @@ public class SearchService {
         this.commonContext = commonContext;
     }
 
-    private static final double THRESHOLD = 0.9;
+    private static final double THRESHOLD = 0.97;
     private static final String END_OF_SENTENCE = "[\\.!?]\\s*";
 
     private final Logger log = LoggerFactory.getLogger(SearchService.class);
@@ -38,38 +38,26 @@ public class SearchService {
         String[] searchWordsNormalForms;
         List<Site> sitesToSearch;
         List<PageDTO> foundPages;
+        List<String> filteredLemmas;
         String message = "";
 
         long searchStartTime = System.nanoTime();
 
-        if (request.getSite() == null) {
-            sitesToSearch = commonContext.getDatabaseService().getAllSites();
-        } else {
-            sitesToSearch = new ArrayList<>() {{
-                add(commonContext.getDatabaseService().getSiteByUrl(request.getSite()));
-            }};
-        }
+        sitesToSearch = getSitesToSearch(request.getSite());
 
         searchWordsNormalForms = commonContext.getMorphologyService().getAndCountLemmasInString(request.getQuery()).keySet().toArray(new String[0]);
 
         if (searchWordsNormalForms.length == 0) {
             throw new SearchException("Не удалось выделить леммы для поиска из запроса");
         }
-        List<String> filteredLemmas = commonContext.getDatabaseService().filterPopularLemmasOut(sitesToSearch, List.of(searchWordsNormalForms), THRESHOLD);
+
+        filteredLemmas = commonContext.getDatabaseService().filterPopularLemmasOut(sitesToSearch, List.of(searchWordsNormalForms), THRESHOLD);
 
         if (filteredLemmas.size() == 0) {
             throw new SearchException("По запросу \'" + request.getQuery() + "\' ничего не найдено");
         }
 
-        do {
-            foundPages = commonContext.getDatabaseService().getSortedRelevantPageDTOs(filteredLemmas,
-                    sitesToSearch.stream().map(Site::getId).collect(Collectors.toList()), request.getLimit());
-            if (foundPages.size() > 0) {
-                break;
-            }
-
-            filteredLemmas.remove(0);
-        } while (filteredLemmas.size() > 0);
+        foundPages = findRelevantPages(filteredLemmas, sitesToSearch, request.getLimit());
 
         if (foundPages.size() == 0) {
             throw new SearchException("По запросу \'" + request.getQuery() + "\' ничего не найдено");
@@ -87,14 +75,38 @@ public class SearchService {
         PageProcessor pp = new PageProcessor(foundPages, filteredLemmas, maxRelevance, 4, commonContext.getMorphologyService(), END_OF_SENTENCE);
         List<PageResponse> searchResults = pool.submit(pp).join();
 
-        SearchResponse response = new SearchResponse();
-        response.setResult(true);
-        response.setMessage(message + String.format(" Время поиска : %.3f сек.", (System.nanoTime() - searchStartTime)/1000000000.));
-        response.setData(searchResults);
-        response.setCount(searchResults.size());
-
         log.info("search for request \"" + request.getQuery() + "\" complete, found " + searchResults.size() + " pages");
-        return response;
+        return new SearchResponse(
+                true,
+                message + String.format(" Время поиска : %.3f сек.", (System.nanoTime() - searchStartTime)/1000000000.),
+                searchResults.size(),
+                searchResults
+        );
+    }
+
+    List<Site> getSitesToSearch(String site) {
+        if (site == null) {
+            return commonContext.getDatabaseService().getAllSites();
+        } else {
+            return new ArrayList<>() {{
+                add(commonContext.getDatabaseService().getSiteByUrl(site));
+            }};
+        }
+    }
+
+    List<PageDTO> findRelevantPages(List<String> filteredLemmas, List<Site> sitesToSearch, int limit) {
+        List<PageDTO> foundPages;
+        do {
+            foundPages = commonContext.getDatabaseService().getSortedRelevantPageDTOs(filteredLemmas,
+                    sitesToSearch.stream().map(Site::getId).collect(Collectors.toList()), limit);
+            if (foundPages.size() > 0) {
+                break;
+            }
+
+            filteredLemmas.remove(0);
+        } while (filteredLemmas.size() > 0);
+
+        return foundPages;
     }
 
     String correctQuery(List<String> lemmas, String originalQuery) {
