@@ -63,6 +63,10 @@ public class IndexingService {
                         if (!pool.getValue().awaitTermination(10, TimeUnit.SECONDS)) {
                             log.warn("pool didn't terminate within timeout, releasing lock on the front anyway");
                         }
+                        synchronized (commonContext.getDatabaseService()) {
+                            commonContext.getDatabaseService().cleanSavedPagesCache();
+                            commonContext.getDatabaseService().setSiteStatusToFailed(pool.getKey(), "Индексация прервана пользователем");
+                        }
                         log.info("indexing interrupted by user for site " + pool.getKey().getUrl());
                         it.remove();
                         continue;
@@ -70,6 +74,7 @@ public class IndexingService {
 
                     if (pool.getValue().isQuiescent()) {
                         synchronized (commonContext.getDatabaseService()) {
+                            commonContext.getDatabaseService().removeDeletedPagesForSite(pool.getKey().getId());
                             commonContext.getDatabaseService().setSiteStatusToIndexed(pool.getKey());
                         }
                         log.info("indexing complete for site " + pool.getKey().getUrl());

@@ -40,6 +40,9 @@ public class Page {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "lemmas_hashcode")
+    private int lemmasHashcode;
+
     @OneToMany(mappedBy = "page", fetch = FetchType.LAZY)
     @Cascade(CascadeType.DELETE)
     private Set<Index> indices;
@@ -62,16 +65,13 @@ public class Page {
         if (this == o) return true;
         if (!(o instanceof Page)) return false;
         Page page = (Page) o;
-        if (!Objects.equals(site, page.site)) return false;
-        if (!Objects.equals(content, page.content)) return false;
-        if (this.code == 404 && page.code == 404) {
-            return Objects.equals(path, page.path);
-        }
-        return true;
+        if (!Objects.equals(site.getUrl(), page.site.getUrl())) return false;
+        if (!Objects.equals(lemmasHashcode, page.lemmasHashcode)) return false;
+        return Objects.equals(path, page.path);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(site, path, code, content);
+        return Objects.hash(site.getUrl(), path, code, lemmasHashcode);
     }
 }

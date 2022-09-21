@@ -739,7 +739,7 @@ public class CrawlerServiceTest {
 
             crawlerSpy.compute();
 
-            verify(databaseService, times(1)).reindexOnePage(any(), any(), anyList(), any());
+            verify(databaseService, times(1)).saveOrUpdatePage(any(), any(), anyList(), any());
         }
 
         @Test

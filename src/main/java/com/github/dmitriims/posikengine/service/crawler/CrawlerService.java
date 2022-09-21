@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.RecursiveAction;
+import java.util.stream.Collectors;
 
 public class CrawlerService extends RecursiveAction {
 
@@ -58,18 +59,16 @@ public class CrawlerService extends RecursiveAction {
                     Page onePage = getPageFromResponse(response);
                     Document document = response.parse();
                     List<Lemma> lemmas = getAndRankAllLemmas(document);
-                    commonContext.getDatabaseService().reindexOnePage(context.getSite(), onePage, lemmas, commonContext);
+                    commonContext.getDatabaseService().saveOrUpdatePage(context.getSite(), onePage, lemmas, commonContext);
                     return;
 
                 } else {
-                    log.info("cleaning up db for site " + context.getSite().getUrl());
+                    log.info("reindexing site " + context.getSite().getUrl());
                     synchronized (commonContext.getDatabaseService()) {
                         if (commonContext.isIndexing()) {
-                            commonContext.getDatabaseService().deleteSiteInformation(context.getSite());
                             context.setSite(commonContext.getDatabaseService().setSiteStatusToIndexing(context.getSite()));
                         }
                     }
-                    log.info("done cleanup for site " + context.getSite().getUrl());
                 }
             } else if (!commonContext.isIndexing()) {
                 return;
@@ -100,12 +99,19 @@ public class CrawlerService extends RecursiveAction {
         }
         Page currentPage = getPageFromResponse(response);
 
-        Document document = response.parse();
-        List<Lemma> allLemmas = getAndRankAllLemmas(document);
+        Document document = new Document(currentPage.getPath());
+        List<Lemma> allLemmas = new ArrayList<>();
+
+        if(currentPage.getCode() >= 200 && currentPage.getCode() < 400) {
+            document = response.parse();
+            allLemmas = getAndRankAllLemmas(document);
+        }
+
+        currentPage.setLemmasHashcode(calculateLemmasHash(allLemmas));
 
         if (commonContext.isIndexing() && context.getNumberOfPagesToCrawl().decrementAndGet() >= 0) {
             synchronized (commonContext.getDatabaseService()) {
-                commonContext.getDatabaseService().savePageToDataBase(context.getSite(), currentPage, allLemmas, commonContext);
+                commonContext.getDatabaseService().saveOrUpdatePage(context.getSite(), currentPage, allLemmas, commonContext);
             }
             return filterLinks(
                     document.select("a[href]")
@@ -170,6 +176,14 @@ public class CrawlerService extends RecursiveAction {
             }
         }
         return allLemmas;
+    }
+
+    int calculateLemmasHash(List<Lemma> lemmas) {
+        int hashcode = 0;
+        for (Lemma l : lemmas) {
+            hashcode += l.getLemma().hashCode() * l.getFrequency();
+        }
+        return hashcode;
     }
 
     Set<String> filterLinks(List<String> links) {

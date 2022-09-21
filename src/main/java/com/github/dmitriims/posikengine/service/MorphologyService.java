@@ -47,6 +47,7 @@ public class MorphologyService {
     }
 
     public List<String> getNormalFormOfAWord(String word) {
+        word = word.replaceAll("ё", "е");
         if (russianLuceneMorph.checkString(word) && !isRussianGarbage(russianLuceneMorph.getMorphInfo(word))) {
             return russianLuceneMorph.getNormalForms(word);
         } else if (englishLuceneMorph.checkString(word) && !isEnglishGarbage(englishLuceneMorph.getMorphInfo(word))) {

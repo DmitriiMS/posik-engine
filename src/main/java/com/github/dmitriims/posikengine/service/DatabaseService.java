@@ -3,7 +3,6 @@ package com.github.dmitriims.posikengine.service;
 import com.github.dmitriims.posikengine.dto.PageDTO;
 import com.github.dmitriims.posikengine.model.*;
 import com.github.dmitriims.posikengine.repositories.*;
-import com.github.dmitriims.posikengine.repositories.LemmaRepository;
 import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +26,8 @@ public class DatabaseService {
 
     private Logger log = LoggerFactory.getLogger(DatabaseService.class);
 
+    private Map<Long, Set<Long>> savedPagesPerSite = new HashMap<>();
+
     @Autowired
     public DatabaseService(SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository,
                            IndexRepository indexRepository, FieldRepository fieldRepository) {
@@ -38,29 +39,68 @@ public class DatabaseService {
     }
 
     @Transactional
+    public void saveOrUpdatePage(Site site, Page page, List<Lemma> originalLemmas, CommonContext commonContext) {
+        Page pageToReindex = pageRepository.findBySiteAndPathEquals(site, page.getPath());
+        if (pageToReindex == null) {
+            savePageToDataBase(site, page, originalLemmas, commonContext);
+            return;
+        }
+        if (page.equals(pageToReindex)) {
+            addPageToSavedPagesMap(pageToReindex);
+            return;
+        }
+        dropOldIndexesAndDecrementLemmasFrequencies(pageToReindex.getId());
+        savePageToDataBase(site, page, originalLemmas, commonContext);
+    }
+
+    @Transactional
     public void savePageToDataBase(Site site, Page page, List<Lemma> lemmas, CommonContext commonContext) {
         Page savedPage = pageRepository.findBySiteAndPathEquals(site, page.getPath());
-        if (savedPage != null) {
-            return; //TODO: проверить возможность этого случая, если да, то в идеале кидать исключение
+        if (savedPage == null) {
+            savedPage = pageRepository.save(page);
+        } else if (!savedPage.equals(page)) {
+            savedPage.setCode(page.getCode());
+            savedPage.setPath(page.getPath());
+            savedPage.setContent(page.getContent());
+            savedPage.setLemmasHashcode(page.getLemmasHashcode());
+            savedPage = pageRepository.saveAndFlush(savedPage);
         }
-        savedPage = pageRepository.save(page);
+        addPageToSavedPagesMap(savedPage);
         saveNewLemmasAndIndexes(savedPage, lemmas);
         setIndexingStatusOnCompletion(site, commonContext);
     }
 
-    @Transactional
-    public void reindexOnePage(Site site, Page page, List<Lemma> originalLemmas, CommonContext commonContext) {
-        Page pageToReindex = pageRepository.findBySiteAndPathEquals(site, page.getPath());
-        if(pageToReindex == null) {
-            savePageToDataBase(site, page, originalLemmas, commonContext);
-            return;
+    private void addPageToSavedPagesMap(Page page) {
+        if (!savedPagesPerSite.containsKey(page.getSite().getId())) {
+            savedPagesPerSite.put(page.getSite().getId(), new HashSet<>());
         }
-        dropOldIndexesAndDecrementLemmasFrequencies(pageToReindex);
-        savePageToDataBase(site, page, originalLemmas, commonContext);
+        savedPagesPerSite.get(page.getSite().getId()).add(page.getId());
     }
 
-    private void dropOldIndexesAndDecrementLemmasFrequencies(Page page) {
-        List<Index> indexesToDelete = indexRepository.findAllByPage_Id(page.getId());
+    @Transactional
+    public void removeDeletedPagesForSite(Long siteId) {
+        Set<Long> savedPagesSet = savedPagesPerSite.get(siteId);
+        Set<Long> pagesInDb = new HashSet<>(pageRepository.getAllIdsBySiteId(Collections.singletonList(siteId)));
+        if (pagesInDb.size() > savedPagesSet.size()) {
+            log.info("cleaning up deleted pages for site " + siteRepository.findById(siteId));
+            pagesInDb.removeAll(savedPagesSet);
+            for (Long pageId : pagesInDb) {
+                dropOldIndexesAndDecrementLemmasFrequencies(pageId);
+                pageRepository.deleteById(pageId);
+            }
+            log.info("cleanup complete");
+
+        }
+        savedPagesPerSite.remove(siteId);
+    }
+
+    @Transactional
+    public void cleanSavedPagesCache() {
+        savedPagesPerSite = new HashMap<>();
+    }
+
+    private void dropOldIndexesAndDecrementLemmasFrequencies(Long pageId) {
+        List<Index> indexesToDelete = indexRepository.findAllByPage_Id(pageId);
         Lemma lemmaToUpdate;
         int newFrequency;
         for (Index index : indexesToDelete) {
@@ -97,12 +137,12 @@ public class DatabaseService {
         return lemmaRepository.saveAllAndFlush(lemmasToFlush);
     }
 
-    private void saveIndexes (Page page, List<Lemma> newLemmas, List<Lemma> savedLemmas) {
+    private void saveIndexes(Page page, List<Lemma> newLemmas, List<Lemma> savedLemmas) {
         List<Index> newIndexes = new ArrayList<>();
         for (Lemma lemma : savedLemmas) {
             int i = newLemmas.indexOf(lemma);
             Lemma originalLemma = newLemmas.get(i);
-            newIndexes.add(new Index(page, lemma, originalLemma.getRank(),originalLemma.getFrequency()));
+            newIndexes.add(new Index(page, lemma, originalLemma.getRank(), originalLemma.getFrequency()));
         }
         indexRepository.saveAllAndFlush(newIndexes);
     }
@@ -153,7 +193,7 @@ public class DatabaseService {
     }
 
     private void setIndexingStatusOnCompletion(Site site, CommonContext commonContext) {
-        if(commonContext.isIndexing()) {
+        if (commonContext.isIndexing()) {
             setSiteStatusToIndexing(site);
         } else {
             setSiteStatusToFailed(site, commonContext.getIndexingMessage());
@@ -163,7 +203,7 @@ public class DatabaseService {
     @Transactional
     public void deleteSiteInformation(Site site) {
         List<Long> pageIds = pageRepository.getAllIdsBySiteId(Collections.singletonList(site.getId()));
-        for(long id : pageIds) {
+        for (long id : pageIds) {
             indexRepository.deleteAllByPage_Id(id);
         }
         lemmaRepository.deleteAllBySite(site);
@@ -189,7 +229,7 @@ public class DatabaseService {
                 relevantPages = pageRepository.getAllIdsBySiteId(sites);
             }
             relevantPages = indexRepository.findPageIdsBySiteInAndLemmaAndPageIdsIn(sites, lemma, relevantPages);
-            if(relevantPages.isEmpty()) {
+            if (relevantPages.isEmpty()) {
                 return new ArrayList<>();
             }
         }
