@@ -777,7 +777,6 @@ public class CrawlerServiceTest {
 
             InOrder inOrder = inOrder(databaseService, crawlerSpy);
 
-            inOrder.verify(databaseService, times(1)).deleteSiteInformation(any());
             inOrder.verify(databaseService, times(1)).setSiteStatusToIndexing(any());
             inOrder.verify(crawlerSpy, times(1)).processOnePage(anyString());
         }
@@ -798,7 +797,6 @@ public class CrawlerServiceTest {
 
             InOrder inOrder = inOrder(databaseService, crawlerSpy);
 
-            inOrder.verify(databaseService, never()).deleteSiteInformation(any());
             inOrder.verify(databaseService, never()).setSiteStatusToIndexing(any());
             inOrder.verify(crawlerSpy, times(1)).processOnePage(anyString());
         }

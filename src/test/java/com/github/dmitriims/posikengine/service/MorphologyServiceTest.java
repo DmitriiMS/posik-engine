@@ -164,6 +164,16 @@ public class MorphologyServiceTest {
     }
 
     @Test
+    @DisplayName("getNormalFormOfAWord - русский, ё заменяется на е при получении нормальной формы")
+    public void testGetNormalFormOfAWordRussianWithYo() {
+        List<String> expected = new ArrayList<>() {{
+            add("елка");
+        }};
+        List<String> actual = morphologyService.getNormalFormOfAWord("ёлка");
+        assertIterableEquals(expected, actual);
+    }
+
+    @Test
     @DisplayName("getNormalFormOfAWord - английский")
     public void testGetNormalFormOfAWordEnglish() {
         List<String> expected = new ArrayList<>() {{
