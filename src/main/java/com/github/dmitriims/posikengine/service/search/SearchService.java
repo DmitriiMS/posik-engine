@@ -54,13 +54,13 @@ public class SearchService {
         filteredLemmas = commonContext.getDatabaseService().filterPopularLemmasOut(sitesToSearch, List.of(searchWordsNormalForms), THRESHOLD);
 
         if (filteredLemmas.size() == 0) {
-            throw new SearchException("По запросу \'" + request.getQuery() + "\' ничего не найдено");
+            throw new SearchException("По запросу '" + request.getQuery() + "' ничего не найдено");
         }
 
         foundPages = findRelevantPages(filteredLemmas, sitesToSearch, request.getLimit());
 
         if (foundPages.size() == 0) {
-            throw new SearchException("По запросу \'" + request.getQuery() + "\' ничего не найдено");
+            throw new SearchException("По запросу '" + request.getQuery() + "' ничего не найдено");
         }
 
         if (filteredLemmas.size() < searchWordsNormalForms.length) {
