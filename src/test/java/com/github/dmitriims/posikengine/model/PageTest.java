@@ -18,81 +18,81 @@ public class PageTest {
     }
 
     @Test
-    @DisplayName("Код не 404, содержимое совпадает, один сайт, пути разные: равны")
-    public void testPageNot404SameContentSameSiteDiffPathsEquals() {
-        Site site = new Site();
-        site.setUrl("http://test.test");
-        site.setName("test");
+    @DisplayName("разные адреса сайтов, не равны")
+    public void testDiffSiteUrlsNotEqual() {
+        Site site1 = new Site();
+        site1.setUrl("http://test.test");
+        site1.setName("test");
+
+        Site site2 = new Site();
+        site2.setUrl("http://not.test");
+        site2.setName("test");
 
         Page page = new Page();
-        page.setSite(site);
+        page.setSite(site1);
         page.setCode(200);
-        page.setContent("content");
+        page.setLemmasHashcode(12345);
         page.setPath("path");
 
 
         Page anotherPage = new Page();
-        anotherPage.setSite(site);
+        anotherPage.setSite(site2);
         anotherPage.setCode(200);
-        anotherPage.setContent("content");
-        anotherPage.setPath("path/");
-
-        assertEquals(page, anotherPage);
-    }
-
-    @Test
-    @DisplayName("Код не 404, содержимое совпадает, разные сайты, пути одинаковые: не равны")
-    public void testPageNot404SameContentDiffSitesSamePathEquals() {
-        Site site = new Site();
-        site.setUrl("http://test.test");
-        site.setName("test");
-
-        Site anotherSite = new Site();
-        site.setUrl("http://not.test");
-        site.setName("not");
-
-        Page page = new Page();
-        page.setSite(site);
-        page.setCode(200);
-        page.setContent("content");
-        page.setPath("path");
-
-
-        Page anotherPage = new Page();
-        anotherPage.setSite(anotherSite);
-        anotherPage.setCode(200);
-        anotherPage.setContent("content");
+        anotherPage.setLemmasHashcode(12345);
         anotherPage.setPath("path");
 
         assertNotEquals(page, anotherPage);
     }
 
     @Test
-    @DisplayName("Код 404, содержимое совпадает, один сайт, пути разные: не равны")
-    public void testPage404SameContentSameSiteDiffPathsEquals() {
+    @DisplayName("одинаковый сайт, разные хэши, не равны")
+    public void testSameSiteDifferentHashcodeNotEqual() {
         Site site = new Site();
         site.setUrl("http://test.test");
         site.setName("test");
 
         Page page = new Page();
         page.setSite(site);
-        page.setCode(404);
-        page.setContent("content");
+        page.setCode(200);
+        page.setLemmasHashcode(12345);
         page.setPath("path");
 
 
         Page anotherPage = new Page();
         anotherPage.setSite(site);
-        anotherPage.setCode(404);
-        anotherPage.setContent("content");
-        anotherPage.setPath("path/");
+        anotherPage.setCode(200);
+        anotherPage.setLemmasHashcode(54321);
+        anotherPage.setPath("path");
 
         assertNotEquals(page, anotherPage);
     }
 
     @Test
-    @DisplayName("Код 404, содержимое совпадает, один сайт, пути совпадают: равны")
-    public void testPage404SameContentSameSiteSamePathsEquals() {
+    @DisplayName("одинаковый сайт, одинаковый хэш, разные пути, не равны")
+    public void testSameSiteSameHashDifferentPathNotEqual() {
+        Site site = new Site();
+        site.setUrl("http://test.test");
+        site.setName("test");
+
+        Page page = new Page();
+        page.setSite(site);
+        page.setCode(200);
+        page.setLemmasHashcode(12345);
+        page.setPath("path");
+
+
+        Page anotherPage = new Page();
+        anotherPage.setSite(site);
+        anotherPage.setCode(200);
+        anotherPage.setLemmasHashcode(12345);
+        anotherPage.setPath("notPath");
+
+        assertNotEquals(page, anotherPage);
+    }
+
+    @Test
+    @DisplayName("Сайт Хэш и путь совпадают, равны")
+    public void testSiteHashAndPathSameEqual() {
         Site site = new Site();
         site.setUrl("http://test.test");
         site.setName("test");
@@ -100,14 +100,14 @@ public class PageTest {
         Page page = new Page();
         page.setSite(site);
         page.setCode(404);
-        page.setContent("content");
+        page.setLemmasHashcode(12345);
         page.setPath("path");
 
 
         Page anotherPage = new Page();
         anotherPage.setSite(site);
         anotherPage.setCode(404);
-        anotherPage.setContent("content");
+        anotherPage.setLemmasHashcode(12345);
         anotherPage.setPath("path");
 
         assertEquals(page, anotherPage);
