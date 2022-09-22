@@ -6,6 +6,7 @@ import com.github.dmitriims.posikengine.dto.userprovaideddata.UserProvidedData;
 import com.github.dmitriims.posikengine.exceptions.IndexingStatusException;
 import com.github.dmitriims.posikengine.model.Field;
 import com.github.dmitriims.posikengine.model.Site;
+import com.github.dmitriims.posikengine.model.Status;
 import com.github.dmitriims.posikengine.service.crawler.CrawlerContext;
 import com.github.dmitriims.posikengine.service.crawler.CrawlerService;
 import crawlercommons.robots.BaseRobotRules;
@@ -22,6 +23,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -93,33 +95,70 @@ public class IndexingService {
         return commonContext.isIndexing();
     }
 
+    public boolean isSiteIndexing(String siteUrl) {
+        return isIndexing() && isSiteStatusEqualsIndexing(siteUrl);
+    }
+
+    private boolean isSiteStatusEqualsIndexing(String siteUrl) {
+        return commonContext.getDatabaseService().getSiteByUrl(siteUrl).getStatus().equals(Status.INDEXING);
+    }
+
     public void setIndexing(boolean flag) {
         commonContext.setIndexing(flag);
     }
 
     public IndexingStatusResponse startIndexing() throws IOException, IndexingStatusException {
-        if (commonContext.isIndexing()) {
-            throw new IndexingStatusException("Индексация уже запущена");
+        boolean wasNotIndexing = false;
+
+        if (!commonContext.isIndexing()) {
+            wasNotIndexing = true;
+            commonContext.setIndexing(true);
+            commonContext.resetIndexingMessage();
+            sitePools = new ConcurrentHashMap<>();
         }
 
-        commonContext.setIndexing(true);
-        commonContext.resetIndexingMessage();
-
         List<Site> sites = commonContext.getDatabaseService().getAllSites();
+        sites.removeIf(site -> site.getStatus().equals(Status.INDEXING));
+        if(sites.size() == 0) {
+            throw new IndexingStatusException("Индексация уже запущена");
+        }
         List<Field> fields = commonContext.getDatabaseService().getAllFields();
-        sitePools = new HashMap<>();
 
         for (Site site : sites) {
             addSiteAndStartIndexing(site, Integer.MAX_VALUE, fields);
         }
 
-        indexingMonitorTread = new Thread(indexingMonitor, "Indexing-monitor");
-        indexingMonitorTread.start();
+        if (wasNotIndexing) {
+            indexingMonitorTread = new Thread(indexingMonitor, "Indexing-monitor");
+            indexingMonitorTread.start();
+        }
 
         return new IndexingStatusResponse(true, null);
     }
 
-    public IndexingStatusResponse stopIndexing() {
+    public IndexingStatusResponse indexSite(String siteUrl) throws IOException, IndexingStatusException {
+        boolean wasNotIndexing = false;
+
+        if (isSiteIndexing(siteUrl)) {
+            throw new IndexingStatusException("Индексация для сайта " + siteUrl + " уже запущена");
+        }
+        if (!isIndexing()) {
+            wasNotIndexing = true;
+            commonContext.setIndexing(true);
+            commonContext.resetIndexingMessage();
+            sitePools = new ConcurrentHashMap<>();
+        }
+        Site site = commonContext.getDatabaseService().getSiteByUrl(siteUrl);
+        List<Field> fields = commonContext.getDatabaseService().getAllFields();
+        addSiteAndStartIndexing(site, Integer.MAX_VALUE, fields);
+        if (wasNotIndexing) {
+            indexingMonitorTread = new Thread(indexingMonitor, "Indexing-monitor");
+            indexingMonitorTread.start();
+        }
+        return new IndexingStatusResponse(true, null);
+    }
+
+    public IndexingStatusResponse stopIndexing() throws IndexingStatusException {
         if (!commonContext.isIndexing()) {
             throw new IndexingStatusException("Индексация уже остановлена");
         }
@@ -142,13 +181,13 @@ public class IndexingService {
         return new IndexingStatusResponse(true, null);
     }
 
-    public IndexingStatusResponse indexOnePage(String url) throws IOException {
+    public IndexingStatusResponse indexOnePage(String url) throws IOException, IndexingStatusException {
 
         if (commonContext.isIndexing()) {
             throw new IndexingStatusException("Индексация уже запущена");
         }
 
-        sitePools = new HashMap<>();
+        sitePools = new ConcurrentHashMap<>();
         List<Field> fields = commonContext.getDatabaseService().getAllFields();
         List<String> userProvidedSitesUrls = userProvidedData.getSites().stream().map(SiteUrlAndNameDTO::getUrl).collect(Collectors.toList());
 

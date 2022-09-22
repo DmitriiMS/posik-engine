@@ -36,9 +36,6 @@ public class ApiController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity<IndexingStatusResponse> startIndexing() throws IOException {
-        if (indexingService.isIndexing()) {
-            throw new IndexingStatusException("Индексация уже запущена");
-        }
         IndexingStatusResponse status = indexingService.startIndexing();
         if (indexingService.isIndexing()) {
             return ResponseEntity.ok(status);
@@ -54,6 +51,19 @@ public class ApiController {
         }
         IndexingStatusResponse status = indexingService.stopIndexing();
         if (!indexingService.isIndexing()) {
+            return ResponseEntity.ok(status);
+        }
+
+        throw new UnknownIndexingStatusException("Неизвестная ошибка индексирования");
+    }
+
+    @PostMapping("/indexSite")
+    public ResponseEntity<IndexingStatusResponse> indexSite(@RequestParam String siteUrl) throws IOException {
+        if (indexingService.isSiteIndexing(siteUrl)) {
+            throw new IndexingStatusException("Индексация для сайта " + siteUrl + " уже запущена");
+        }
+        IndexingStatusResponse status = indexingService.indexSite(siteUrl);
+        if (indexingService.isIndexing()) {
             return ResponseEntity.ok(status);
         }
 
