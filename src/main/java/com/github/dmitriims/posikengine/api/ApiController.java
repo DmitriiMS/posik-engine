@@ -73,7 +73,7 @@ public class ApiController {
     public ResponseEntity<IndexingStatusResponse> indexPage(@RequestParam String url) throws IOException {
         if (indexingService.isIndexing()) {
             throw new IndexingStatusException("Индексация уже запущена");
-        }
+        }//TODO выкинуть, пусть индексируется, когда хочет
         IndexingStatusResponse status = indexingService.indexOnePage(url);
         if (indexingService.isIndexing()) {
             return ResponseEntity.ok(status);

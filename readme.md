@@ -171,8 +171,8 @@ java -jar posik-engine-1.2.jar
 Метод без параметров. Используется для получения статистики, которая отображается на вкладке Dashboard. Пример ответа:
 ```json
 {
-  'result': true,
-  'statistics': {
+  "result": true,
+  "statistics": {
     "total": {
       "sites": 10,
       "pages": 436423,
@@ -188,8 +188,7 @@ java -jar posik-engine-1.2.jar
         "error": "Ошибка индексации: главная страница сайта недоступна",
         "pages": 5764,
         "lemmas": 321115
-      },
-      ...
+      }
     ]
   }
 }
@@ -208,7 +207,7 @@ java -jar posik-engine-1.2.jar
 {
     "result": true,
     "message": "Время поиска: 0,420 сек",
-    "count": 574,
+    "count": 1,
     "data": [
         {
             "site": "http://www.site.com",
@@ -217,8 +216,7 @@ java -jar posik-engine-1.2.jar
             "title": "Заголовок страницы, которую выводим",
             "snippet": "Фрагмент текста, в котором найдены совпадения, <b>выделенные жирным</b>, в формате HTML",
             "relevance": 0.93362
-        },
-        ...
+        }
     ] 
 }
 ```
