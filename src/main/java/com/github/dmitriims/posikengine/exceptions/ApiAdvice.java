@@ -49,7 +49,6 @@ public class ApiAdvice {
     public ResponseEntity<ErrorResponse> handleConnectException(ConnectException ce) {
         if (indexingService.isIndexing()) {
             indexingService.setIndexing(false);
-//TODO: тут надо сохранить куда-то сообщение об ошибке и тот факт, что прошлая процедура обломилась и при восстановлении соединения обновить информацию в бд
         }
         return new ResponseEntity<>(
                 new ErrorResponse(ce.getLocalizedMessage()),

@@ -87,7 +87,7 @@ public class IndexingService {
             }
         } catch (InterruptedException e) {
             log.error("something interrupted Indexing-monitor during timeout!");
-            throw new RuntimeException(); //TODO: сделать обработку
+            throw new RuntimeException();
         }
     };
 

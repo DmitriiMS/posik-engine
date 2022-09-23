@@ -30,7 +30,6 @@ public class ApiController {
 
     @GetMapping("/statistics")
     public ResponseEntity<StatisticsResponse> calculateStatistics() {
-        //TODO: посмотреть, какие могут вылезти ошибки
         return ResponseEntity.ok(statisticsService.getStatistics());
     }
 
@@ -83,7 +82,7 @@ public class ApiController {
         throw new UnknownIndexingStatusException("Неизвестная ошибка индексирования");
     }
 
-    @GetMapping("/search") //TODO: перейти к валидации полей от проверок в методе
+    @GetMapping("/search")
     public ResponseEntity<SearchResponse> search(@RequestParam(name = "query") String query,
                                                  @RequestParam(name = "site", required = false) String site,
                                                  @RequestParam(name = "offset", defaultValue = "0") int offset,

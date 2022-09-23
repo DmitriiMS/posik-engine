@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Component
-public class CommonContext { //TODO: как можно оптимизировать? Не все поля везде нужны
+public class CommonContext {
     private String userAgent;
     private DatabaseService databaseService;
     private List<String> FORBIDDEN_COMPONENTS;

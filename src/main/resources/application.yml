@@ -10,12 +10,10 @@ spring:
       use-new-id-generator-mappings: true
       ddl-auto: create
     generate-ddl: true
-    show-sql: false
     properties:
       hibernate:
         jdbc:
           batch_size: 100
-        generate_statistics: false
         order_updates: true
         order_inserts: true
 
@@ -35,21 +33,15 @@ search-engine-properties:
       -
         url: https://nikoartgallery.com
         name: Галерея искусств Niko
-#      -
-#        url: https://www.lutherancathedral.ru
-#        name: Собор Петра и Павла
-#      -
-#        url: https://et-cetera.ru/mobile
-#        name: Театр «Et Cetera»
-#      -
-#        url: https://skillbox.ru/
-#        name: Skillbox
-#      -
-#        url: https://lenta.ru
-#        name: lenta.ru
-#      -
-#        url: https://dimonvideo.ru/
-#        name: DimonVideo
+      -
+        url: https://www.lutherancathedral.ru
+        name: Собор Петра и Павла
+      -
+        url: https://et-cetera.ru/mobile
+        name: Театр «Et Cetera»
+      -
+        url: https://skillbox.ru/
+        name: Skillbox
     fields:
       -
         name: title

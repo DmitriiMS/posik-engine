@@ -14,7 +14,6 @@ import java.util.List;
 @Configuration
 public class BeanConfiguration {
 
-    //TODO: here and further look into ways of handling exceptions in a better way
     @Bean(name = "russianMorphology")
     public LuceneMorphology russianMorphology() throws IOException {
         return new RussianLuceneMorphology();

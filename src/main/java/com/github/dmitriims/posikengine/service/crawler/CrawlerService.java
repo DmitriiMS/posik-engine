@@ -29,7 +29,7 @@ public class CrawlerService extends RecursiveAction {
     public CrawlerService(String link, CrawlerContext context, CommonContext commonContext) {
         this.commonContext = commonContext;
         this.context = context;
-        this.link = decodeLink(link); //TODO: посмотреть, можно ли делать проверку перед decodeLink
+        this.link = decodeLink(link);
         context.getVisitedPages().add(link);
     }
 

@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class PageProcessorTest {
     LuceneMorphology russianLuceneMorphology = new RussianLuceneMorphology();
     LuceneMorphology englishLuceneMorphology = new EnglishLuceneMorphology();
-    String notAWord = "(?:\\.*\\s+\\-\\s+\\.*)|[^\\-а-яА-Яa-zA-Z\\d\\ё\\Ё]+";//TODO: посмотреть как можно подтягивать автоматом
+    String notAWord = "(?:\\.*\\s+\\-\\s+\\.*)|[^\\-а-яА-Яa-zA-Z\\d\\ё\\Ё]+";
 
     MorphologyService morphologyService = new MorphologyService(notAWord, russianLuceneMorphology, englishLuceneMorphology);
 

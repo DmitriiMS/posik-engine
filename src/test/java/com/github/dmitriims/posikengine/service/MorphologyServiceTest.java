@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MorphologyServiceTest {
     LuceneMorphology russianLuceneMorphology = new RussianLuceneMorphology();
     LuceneMorphology englishLuceneMorphology = new EnglishLuceneMorphology();
-    String notAWord = "(?:\\.*\\s+\\-\\s+\\.*)|[^\\-а-яА-Яa-zA-Z\\d\\ё\\Ё]+";//TODO: посмотреть как можно подтягивать автоматом
+    String notAWord = "(?:\\.*\\s+\\-\\s+\\.*)|[^\\-а-яА-Яa-zA-Z\\d\\ё\\Ё]+";
 
     MorphologyService morphologyService = new MorphologyService(notAWord, russianLuceneMorphology, englishLuceneMorphology);
 
@@ -212,7 +212,7 @@ public class MorphologyServiceTest {
     @Test
     @DisplayName("getAndCountLemmasInString - подсчёт лемм")
     public void testGetAndCountLemmasInStringNormal() {
-        Map<String, Integer> expected  = new TreeMap<>(){{ //TODO: проверить в последствии замену на обычную хэшмапу
+        Map<String, Integer> expected  = new TreeMap<>(){{
             put("42", 1);
             put("be", 1);
             put("first", 3);
