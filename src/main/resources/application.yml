@@ -8,7 +8,7 @@ spring:
     hibernate:
       dialect: org.hibernate.dialect.PostgreSQLDialect
       use-new-id-generator-mappings: true
-      ddl-auto: update
+      ddl-auto: create
     generate-ddl: true
     show-sql: false
     properties:
@@ -26,27 +26,24 @@ logging:
     dateformat: yyyy-MM-dd HH:mm:ss:SSS
   level:
     root: info
-#    org.hibernate.stat: debug
-#    org.hibernate.sql: debug
-#    org.hibernate.cache: debug
 
 search-engine-properties:
   user-agent: PösikEngineSearchBot
   home-page: /admin
   preload:
     sites:
+      -
+        url: https://nikoartgallery.com
+        name: Галерея искусств Niko
 #      -
-#        url: https://nikoartgallery.com
-#        name: Галерея искусств Niko
-      -
-        url: https://www.lutherancathedral.ru
-        name: Собор Петра и Павла
-      -
-        url: https://et-cetera.ru/mobile
-        name: Театр «Et Cetera»
-      -
-        url: https://skillbox.ru/
-        name: Skillbox
+#        url: https://www.lutherancathedral.ru
+#        name: Собор Петра и Павла
+#      -
+#        url: https://et-cetera.ru/mobile
+#        name: Театр «Et Cetera»
+#      -
+#        url: https://skillbox.ru/
+#        name: Skillbox
 #      -
 #        url: https://lenta.ru
 #        name: lenta.ru
@@ -58,6 +55,10 @@ search-engine-properties:
         name: title
         selector: title
         weight: 1.0
+      -
+        name: h1
+        selector: h1
+        weight: 0.9
       -
         name: body
         selector: body
