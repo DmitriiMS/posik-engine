@@ -11,8 +11,10 @@ import java.util.List;
 
 public interface PageRepository extends JpaRepository<Page, Long> {
     long countBySite(Site site);
-    Page findBySiteAndPathEquals(Site site, String path);
-    void deleteAllBySite(Site site);
+
+    @Query(value = "select * from page where site_id=:siteId and path=:path", nativeQuery = true)
+    Page findBySiteIdAndPagePath(@Param("siteId") Long siteId, @Param("path") String path);
+
 
     @Query(value = "select p.id from page p where p.site_id in :sites", nativeQuery = true)
     List<Long> getAllIdsBySiteId(@Param("sites") List<Long> siteIds);

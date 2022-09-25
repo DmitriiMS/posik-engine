@@ -11,8 +11,9 @@ import java.util.List;
 
 public interface LemmaRepository extends JpaRepository<Lemma, Long> {
     long countBySite(Site site);
-    void deleteAllBySite(Site site);
-    List<Lemma> findAllBySiteAndLemmaIn(Site site, List<String> lemmas);
+
+    @Query(value = "select * from lemma l where l.site_id=:siteId and l.lemma in :lemmas", nativeQuery = true)
+    List<Tuple> findAllBySiteAndLemmaIn(@Param("siteId") Long siteId, @Param("lemmas") List<String> lemmas);
 
 
     @Query(

@@ -1,16 +1,9 @@
 package com.github.dmitriims.posikengine.service;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 @Service

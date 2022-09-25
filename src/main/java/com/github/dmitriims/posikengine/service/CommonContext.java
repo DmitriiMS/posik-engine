@@ -15,6 +15,7 @@ public class CommonContext {
     private MorphologyService morphologyService;
 
     private boolean isIndexing = false;
+    private boolean areAllSitesIndexing = false;
     private String indexingMessage = "";
 
     public CommonContext(

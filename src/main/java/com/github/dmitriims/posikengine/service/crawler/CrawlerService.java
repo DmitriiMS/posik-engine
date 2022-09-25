@@ -1,6 +1,5 @@
 package com.github.dmitriims.posikengine.service.crawler;
 
-import com.github.dmitriims.posikengine.exceptions.IndexingStatusException;
 import com.github.dmitriims.posikengine.model.*;
 import com.github.dmitriims.posikengine.service.CommonContext;
 import org.jsoup.Connection;
@@ -39,7 +38,7 @@ public class CrawlerService extends RecursiveAction {
         this.link = decodeLink(context.getSite().getUrl());
         context.getVisitedPages().add(link);
 
-        log.info("started task for site " + context.getSite().getUrl());
+        log.info("запускаются рабочие для сайта " + context.getSite().getUrl());
     }
 
 
@@ -49,38 +48,14 @@ public class CrawlerService extends RecursiveAction {
             if (!commonContext.isIndexing() || context.getThisPool().isShutdown() || context.getNumberOfPagesToCrawl().get() <= 0) {
                 return;
             }
-
-            if (commonContext.isIndexing() && isSiteIndexedOrInterrupted(context.getSite())) {
-                if (context.isReindexOnePage()) {
-                    log.info("indexing page " + link + " for site " + context.getSite().getUrl());
-                    Connection.Response response = getResponseFromLink(link);
-                    if(!response.contentType().startsWith("text")) {
-                        throw new IndexingStatusException("Страницы с типом \"" + response.contentType() + "\" не участвуют в индексировании");
-                    }
-                    Page onePage = getPageFromResponse(response);
-                    Document document = response.parse();
-                    List<Lemma> lemmas = getAndRankAllLemmas(document);
-                    commonContext.getDatabaseService().saveOrUpdatePage(context.getSite(), onePage, lemmas, commonContext);
-                    return;
-
-                } else {
-                    log.info("reindexing site " + context.getSite().getUrl());
-                    synchronized (commonContext.getDatabaseService()) {
-                        if (commonContext.isIndexing()) {
-                            context.setSite(commonContext.getDatabaseService().setSiteStatusToIndexing(context.getSite()));
-                        }
-                    }
-                }
-            } else if (!commonContext.isIndexing()) {
-                return;
-            }
-
             Thread.sleep(context.getDelayGenerator().ints(500, 5001).findFirst().getAsInt());
 
             Set<String> filteredLinks = processOnePage(link);
+
             if (commonContext.isIndexing() && filteredLinks.size() != 0) {
                 invokeAll(filteredLinks.stream().map(link -> new CrawlerService(link, context, commonContext)).toList());
             }
+
         } catch (IOException ioe) {
             log.error(ioe.toString());
         } catch (InterruptedException ie) {
@@ -112,7 +87,7 @@ public class CrawlerService extends RecursiveAction {
 
         if (commonContext.isIndexing() && context.getNumberOfPagesToCrawl().decrementAndGet() >= 0) {
             synchronized (commonContext.getDatabaseService()) {
-                commonContext.getDatabaseService().saveOrUpdatePage(context.getSite(), currentPage, allLemmas, commonContext);
+                commonContext.getDatabaseService().saveOrUpdatePage(currentPage, allLemmas, commonContext);
             }
             return filterLinks(
                     document.select("a[href]")
@@ -180,7 +155,7 @@ public class CrawlerService extends RecursiveAction {
                     );
                 }
             }
-            if(f.getSelector().equals("h1")) {
+            if(!f.getSelector().equals("title") && !f.getSelector().equals("body")) {
                 fieldElements.remove();
             }
         }
