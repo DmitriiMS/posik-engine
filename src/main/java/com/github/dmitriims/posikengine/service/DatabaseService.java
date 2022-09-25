@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.Tuple;
+import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,6 +48,7 @@ public class DatabaseService {
         }
         if (page.equals(pageToReindex)) {
             addPageToSavedPagesMap(pageToReindex);
+            setSiteStatusToIndexing(page.getSite());
             return;
         }
         dropOldIndexesAndDecrementLemmasFrequencies(pageToReindex.getId());
@@ -78,20 +80,25 @@ public class DatabaseService {
     }
 
     @Transactional
-    public void removeDeletedPagesForSite(Long siteId) {
+    public boolean removeDeletedPagesForSite(Long siteId) {
         Set<Long> savedPagesSet = savedPagesPerSite.get(siteId);
+        if(savedPagesSet == null) {
+            savedPagesPerSite.remove(siteId);
+            return false;
+        }
         Set<Long> pagesInDb = new HashSet<>(pageRepository.getAllIdsBySiteId(Collections.singletonList(siteId)));
         if (pagesInDb.size() > savedPagesSet.size()) {
-            log.info("cleaning up deleted pages for site " + siteRepository.findById(siteId));
+            log.info("удаляю из базы данных страницы, которых больше нет на сайте " + siteRepository.findById(siteId).orElseThrow().getUrl());
             pagesInDb.removeAll(savedPagesSet);
             for (Long pageId : pagesInDb) {
                 dropOldIndexesAndDecrementLemmasFrequencies(pageId);
                 pageRepository.deleteById(pageId);
             }
-            log.info("cleanup complete");
+            log.info("удаление лишних страниц завершено");
 
         }
         savedPagesPerSite.remove(siteId);
+        return true;
     }
 
     @Transactional
@@ -186,11 +193,6 @@ public class DatabaseService {
         siteRepository.saveAndFlush(siteToUpdate);
     }
 
-    @Transactional
-    public void setAllSiteStatusesToFailed(String error) {
-        List<Site> sites = siteRepository.findAll();
-        sites.forEach(s -> setSiteStatusToFailed(s, error));
-    }
 
     private void setIndexingStatusOnCompletion(Site site, CommonContext commonContext) {
         if (commonContext.isIndexing()) {
@@ -200,15 +202,6 @@ public class DatabaseService {
         }
     }
 
-    @Transactional
-    public void deleteSiteInformation(Site site) {
-        List<Long> pageIds = pageRepository.getAllIdsBySiteId(Collections.singletonList(site.getId()));
-        for (long id : pageIds) {
-            indexRepository.deleteAllByPage_Id(id);
-        }
-        lemmaRepository.deleteAllBySite(site);
-        pageRepository.deleteAllBySite(site);
-    }
 
     @Transactional
     public List<String> filterPopularLemmasOut(List<Site> sites, List<String> lemmas, double threshold) {

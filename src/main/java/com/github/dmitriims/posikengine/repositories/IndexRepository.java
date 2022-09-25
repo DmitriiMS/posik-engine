@@ -8,7 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface IndexRepository extends JpaRepository<Index, Long> {
-    void deleteAllByPage_Id(Long pageId);
     List<Index> findAllByPage_Id(Long pageId);
 
     @Query(

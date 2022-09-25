@@ -1,6 +1,5 @@
 package com.github.dmitriims.posikengine.model;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Cascade;
@@ -11,7 +10,8 @@ import javax.persistence.*;
 import java.util.Objects;
 import java.util.Set;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(uniqueConstraints = {
         @UniqueConstraint(name = "uniqueSiteAndLemma", columnNames = {"site_id", "lemma"})
@@ -46,6 +46,13 @@ public class Lemma {
 
     public Lemma() {
 
+    }
+
+    public Lemma(Long id, Site site, String lemma, int frequency) {
+        this.id = id;
+        this.site = site;
+        this.lemma = lemma;
+        this.frequency = frequency;
     }
 
     @Override

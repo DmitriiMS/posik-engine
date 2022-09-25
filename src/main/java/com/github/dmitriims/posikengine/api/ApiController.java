@@ -39,7 +39,6 @@ public class ApiController {
         if (indexingService.isIndexing()) {
             return ResponseEntity.ok(status);
         }
-
         throw new UnknownIndexingStatusException("Неизвестная ошибка индексирования");
     }
 
@@ -71,14 +70,10 @@ public class ApiController {
 
     @PostMapping("/indexPage")
     public ResponseEntity<IndexingStatusResponse> indexPage(@RequestParam String url) throws IOException {
-        if (indexingService.isIndexing()) {
-            throw new IndexingStatusException("Индексация уже запущена");
-        }//TODO выкинуть, пусть индексируется, когда хочет
         IndexingStatusResponse status = indexingService.indexOnePage(url);
         if (indexingService.isIndexing()) {
             return ResponseEntity.ok(status);
         }
-
         throw new UnknownIndexingStatusException("Неизвестная ошибка индексирования");
     }
 

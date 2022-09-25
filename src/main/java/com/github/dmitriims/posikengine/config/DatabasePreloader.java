@@ -40,9 +40,9 @@ public class DatabasePreloader {
                 site.setName(sp.getName());
                 site.setStatus(Status.FAILED);
                 site.setStatusTime(LocalDateTime.now());
-                site.setLastError("preloaded, no yet indexed");
+                site.setLastError("Ещё не проиндексирован");
                 siteRepository.save(site);
-                log.info("preloaded site: " + site);
+                log.info("загружен в базу данных из конфига сайт: " + site);
             }
 
 
@@ -55,7 +55,7 @@ public class DatabasePreloader {
                 field.setSelector(fp.getSelector());
                 field.setWeight(fp.getWeight());
                 fieldRepository.save(field);
-                log.info("preloaded field: " + field);
+                log.info("загружено в базу данных из конфига поле: " + field);
             }
         };
     }

@@ -11,7 +11,6 @@ import java.util.List;
 
 public interface LemmaRepository extends JpaRepository<Lemma, Long> {
     long countBySite(Site site);
-    void deleteAllBySite(Site site);
     List<Lemma> findAllBySiteAndLemmaIn(Site site, List<String> lemmas);
 
 

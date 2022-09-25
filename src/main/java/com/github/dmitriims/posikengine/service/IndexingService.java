@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,32 +62,36 @@ public class IndexingService {
                     Map.Entry<Site, ForkJoinPool> pool = it.next();
 
                     if (pool.getValue().isShutdown()) {
-                        log.info("waiting for workers to finish all current tasks for site " + pool.getKey().getUrl());
+                        log.info("ожидаю, пока рабочие завершат все текущие задачи для сайта " + pool.getKey().getUrl());
                         if (!pool.getValue().awaitTermination(10, TimeUnit.SECONDS)) {
-                            log.warn("pool didn't terminate within timeout, releasing lock on the front anyway");
+                            log.warn("пул не остановился за заданный период ожидания, отпускаю фронт");
                         }
                         synchronized (commonContext.getDatabaseService()) {
                             commonContext.getDatabaseService().cleanSavedPagesCache();
                             commonContext.getDatabaseService().setSiteStatusToFailed(pool.getKey(), "Индексация прервана пользователем");
                         }
-                        log.info("indexing interrupted by user for site " + pool.getKey().getUrl());
+                        log.info("индексация прервана для сайта " + pool.getKey().getUrl());
                         it.remove();
                         continue;
                     }
 
                     if (pool.getValue().isQuiescent()) {
                         synchronized (commonContext.getDatabaseService()) {
-                            commonContext.getDatabaseService().removeDeletedPagesForSite(pool.getKey().getId());
-                            commonContext.getDatabaseService().setSiteStatusToIndexed(pool.getKey());
+                            boolean indexedAnything = commonContext.getDatabaseService().removeDeletedPagesForSite(pool.getKey().getId());
+                            if(indexedAnything) {
+                                commonContext.getDatabaseService().setSiteStatusToIndexed(pool.getKey());
+                            } else {
+                                commonContext.getDatabaseService().setSiteStatusToFailed(pool.getKey(), "Ничего не проиндексировано");
+                            }
                         }
-                        log.info("indexing complete for site " + pool.getKey().getUrl());
+                        log.info("закончена индексация для сайта " + pool.getKey().getUrl());
                         pool.getValue().shutdownNow();
                         it.remove();
                     }
                 }
             }
         } catch (InterruptedException e) {
-            log.error("something interrupted Indexing-monitor during timeout!");
+            log.error("Indexing-monitor прерван во время ожидания!");
             throw new RuntimeException();
         }
     };
@@ -160,12 +165,12 @@ public class IndexingService {
 
     public IndexingStatusResponse stopIndexing() throws IndexingStatusException {
         if (!commonContext.isIndexing()) {
-            throw new IndexingStatusException("Индексация уже остановлена");
+            throw new IndexingStatusException("Индексация не запущена");
         }
         commonContext.setIndexing(false);
         commonContext.setIndexingMessage("Индексация прервана пользователем");
 
-        log.info("indexing is stopping, sending termination command to workers");
+        log.info("индексация останавливается, рабочим отправлена команда остановиться");
         Iterator<Map.Entry<Site, ForkJoinPool>> it = sitePools.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<Site, ForkJoinPool> pool = it.next();
@@ -183,8 +188,12 @@ public class IndexingService {
 
     public IndexingStatusResponse indexOnePage(String url) throws IOException, IndexingStatusException {
 
-        if (commonContext.isIndexing()) {
-            throw new IndexingStatusException("Индексация уже запущена");
+        boolean wasNotIndexing = false;
+
+        String mimeType = URLConnection.guessContentTypeFromName(url);
+
+        if (mimeType != null && !mimeType.startsWith("text")) {
+            throw new IndexingStatusException("Страницы с типом \"" + URLConnection.guessContentTypeFromName(url) + "\" не участвуют в индексировании");
         }
 
         sitePools = new ConcurrentHashMap<>();
@@ -201,13 +210,19 @@ public class IndexingService {
             throw new IndexingStatusException("Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
         }
 
-        commonContext.setIndexing(true);
-        commonContext.resetIndexingMessage();
+        if (!isIndexing()) {
+            wasNotIndexing = true;
+            commonContext.setIndexing(true);
+            commonContext.resetIndexingMessage();
+            sitePools = new ConcurrentHashMap<>();
+        }
 
         Site site = commonContext.getDatabaseService().getSiteByUrl(siteUrl);
         addOnePageAndIndex(site, url, fields);
-        indexingMonitorTread = new Thread(indexingMonitor, "Indexing-Monitor");
-        indexingMonitorTread.start();
+        if (wasNotIndexing) {
+            indexingMonitorTread = new Thread(indexingMonitor, "Indexing-Monitor");
+            indexingMonitorTread.start();
+        }
         return new IndexingStatusResponse(true, null);
     }
 
@@ -245,6 +260,7 @@ public class IndexingService {
         currentContext.setReindexOnePage(false);
         CrawlerService crawler = new CrawlerService(currentContext, commonContext);
         launchIndexing(currentContext, crawler);
+        log.info("запущена индексация для сайта " + site.getUrl());
     }
 
     public void addOnePageAndIndex(Site site, String url, List<Field> fields) throws IOException {
@@ -252,6 +268,7 @@ public class IndexingService {
         currentContext.setReindexOnePage(true);
         CrawlerService crawler = new CrawlerService(url, currentContext, commonContext);
         launchIndexing(currentContext, crawler);
+        log.info("индексируется одна страница: " + url);
     }
 
     private void launchIndexing(CrawlerContext context, CrawlerService crawler) {
