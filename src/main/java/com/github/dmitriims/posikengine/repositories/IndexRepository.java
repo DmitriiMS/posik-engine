@@ -3,7 +3,6 @@ package com.github.dmitriims.posikengine.repositories;
 import com.github.dmitriims.posikengine.model.Index;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -14,14 +13,14 @@ public interface IndexRepository extends JpaRepository<Index, Long> {
             value = "select i.page_id " +
                     "from index i " +
                     "join lemma l on l.id = i.lemma_id " +
-                    "where l.site_id in :sites " +
+                    "where l.site_id in :siteIds " +
                     "and l.lemma = :lemma " +
-                    "and i.page_id in (:pages)",
+                    "and i.page_id in (:pageIds)",
             nativeQuery = true
     )
     List<Long> findPageIdsBySiteInAndLemmaAndPageIdsIn(
-            @Param("sites") List<Long> siteIds,
-            @Param("lemma") String lemma,
-            @Param("pages") List<Long> pageIds);
+            List<Long> siteIds,
+            String lemma,
+            List<Long> pageIds);
 }
 
