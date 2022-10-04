@@ -55,8 +55,8 @@ public class DatabaseService {
         savePageToDataBase(page, originalLemmas, commonContext);
     }
 
-    @Transactional
-    public void savePageToDataBase(Page page, List<Lemma> lemmas, CommonContext commonContext) {
+
+    private void savePageToDataBase(Page page, List<Lemma> lemmas, CommonContext commonContext) {
         Page savedPage = pageRepository.findBySiteIdAndPagePath(page.getSite().getId(), page.getPath());
         if (savedPage == null) {
             savedPage = pageRepository.save(page);
