@@ -1,4 +1,4 @@
-# Posik Engine Search Bot
+# PosikEngine Search Bot
 
 <div align="center">
     <img src="stuff-for-readme/doghole.jpg" alt="Pösik">
