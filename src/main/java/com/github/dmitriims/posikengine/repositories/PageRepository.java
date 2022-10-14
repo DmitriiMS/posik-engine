@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface PageRepository extends JpaRepository<Page, Long> {
     long countBySite(Site site);
+    Page findBySiteAndPathEquals(Site site, String path);
 
     @Query(value = "select * from page where site_id=:siteId and path=:path", nativeQuery = true)
     Page findBySiteIdAndPagePath(Long siteId, String path);

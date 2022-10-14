@@ -56,8 +56,9 @@ public class DatabaseService {
     }
 
 
-    private void savePageToDataBase(Page page, List<Lemma> lemmas, CommonContext commonContext) {
-        Page savedPage = pageRepository.findBySiteIdAndPagePath(page.getSite().getId(), page.getPath());
+    public void savePageToDataBase(Page page, List<Lemma> lemmas, CommonContext commonContext) {
+        Page savedPage = pageRepository.findBySiteAndPathEquals(page.getSite(), page.getPath());
+
         if (savedPage == null) {
             savedPage = pageRepository.save(page);
         } else if (!savedPage.equals(page)) {
@@ -69,10 +70,10 @@ public class DatabaseService {
         }
         addPageToSavedPagesMap(savedPage);
         saveNewLemmasAndIndexes(savedPage, lemmas);
-        setIndexingStatusOnCompletion(page.getSite().getId(), commonContext);
+        setIndexingStatusOnCompletion(page.getSite(), commonContext);
     }
 
-    private void addPageToSavedPagesMap(Page page) {
+    public void addPageToSavedPagesMap(Page page) {
         if (!savedPagesPerSite.containsKey(page.getSite().getId())) {
             savedPagesPerSite.put(page.getSite().getId(), new HashSet<>());
         }
@@ -106,7 +107,7 @@ public class DatabaseService {
         savedPagesPerSite = new HashMap<>();
     }
 
-    private void dropOldIndexesAndDecrementLemmasFrequencies(Long pageId) {
+    public void dropOldIndexesAndDecrementLemmasFrequencies(Long pageId) {
         List<Index> indexesToDelete = indexRepository.findAllByPage_Id(pageId);
         Lemma lemmaToUpdate;
         int newFrequency;
@@ -123,13 +124,13 @@ public class DatabaseService {
         }
     }
 
-    private void saveNewLemmasAndIndexes(Page page, List<Lemma> newLemmas) {
-        List<Lemma> lemmasFromDB = getLemmasFromDBByLemmasAndSiteId(page.getSite().getId(), newLemmas.stream().map(Lemma::getLemma).collect(Collectors.toList()));
+    public void saveNewLemmasAndIndexes(Page page, List<Lemma> newLemmas) {
+        List<Lemma> lemmasFromDB = lemmaRepository.findAllBySiteAndLemmaIn(page.getSite(), newLemmas.stream().map(Lemma::getLemma).collect(Collectors.toList()));
         List<Lemma> savedLemmas = saveLemmas(newLemmas, lemmasFromDB);
         saveIndexes(page, newLemmas, savedLemmas);
     }
 
-    private List<Lemma> saveLemmas(List<Lemma> newLemmas, List<Lemma> lemmasFromDB) {
+    public List<Lemma> saveLemmas(List<Lemma> newLemmas, List<Lemma> lemmasFromDB) {
         List<Lemma> lemmasToFlush = new ArrayList<>();
         for (Lemma newLemma : newLemmas) {
             int j = lemmasFromDB.indexOf(newLemma);
@@ -144,7 +145,7 @@ public class DatabaseService {
         return lemmaRepository.saveAllAndFlush(lemmasToFlush);
     }
 
-    private void saveIndexes(Page page, List<Lemma> newLemmas, List<Lemma> savedLemmas) {
+    public void saveIndexes(Page page, List<Lemma> newLemmas, List<Lemma> savedLemmas) {
         List<Index> newIndexes = new ArrayList<>();
         for (Lemma lemma : savedLemmas) {
             int i = newLemmas.indexOf(lemma);
@@ -192,11 +193,11 @@ public class DatabaseService {
     }
 
 
-    private void setIndexingStatusOnCompletion(Long siteId, CommonContext commonContext) {
+    public void setIndexingStatusOnCompletion(Site site, CommonContext commonContext) {
         if (commonContext.isIndexing()) {
-            setSiteStatusToIndexing(siteId);
+            setSiteStatusToIndexing(site.getId());
         } else {
-            setSiteStatusToFailed(siteId, commonContext.getIndexingMessage());
+            setSiteStatusToFailed(site.getId(), commonContext.getIndexingMessage());
         }
     }
 
@@ -232,17 +233,6 @@ public class DatabaseService {
                         t.get(2, String.class),
                         t.get(3, String.class),
                         t.get(4, Double.class)))
-                .collect(Collectors.toList());
-    }
-
-    private List<Lemma> getLemmasFromDBByLemmasAndSiteId(Long siteId, List<String> lemmas) {
-        return lemmaRepository.findAllBySiteAndLemmaIn(siteId, lemmas).stream()
-                .map(t -> new Lemma(
-                        t.get(0, BigInteger.class).longValue(),
-                        siteRepository.findById(t.get(3, BigInteger.class).longValue()).get(),
-                        t.get(2, String.class),
-                        t.get(1, Integer.class)
-                ))
                 .collect(Collectors.toList());
     }
 
