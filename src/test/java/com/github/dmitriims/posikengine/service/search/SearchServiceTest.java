@@ -138,10 +138,10 @@ public class SearchServiceTest {
         List<PageDTO> found = Collections.singletonList(pageDTO);
 
         Mockito.when(commonContext.getDatabaseService()).thenReturn(databaseService);
-        Mockito.when(databaseService.getSortedRelevantPageDTOs(anyList(), anyList(), anyInt()))
+        Mockito.when(databaseService.getSortedRelevantPageDTOs(anyList(), anyList(), anyInt(), anyInt()))
                 .thenReturn(found);
 
-        List<PageDTO> actual = searchService.findRelevantPages(lemmas, sites, 10);
+        List<PageDTO> actual = searchService.findRelevantPages(lemmas, sites, 10, 0);
 
         assertAll("Должен быть возвращён список с одной страницей, список лемм должен остаться без изменений",
                 () -> assertEquals(found, actual, "должна найтись одна страница"),
@@ -168,11 +168,11 @@ public class SearchServiceTest {
         List<PageDTO> found = Collections.singletonList(pageDTO);
 
         Mockito.when(commonContext.getDatabaseService()).thenReturn(databaseService);
-        Mockito.when(databaseService.getSortedRelevantPageDTOs(anyList(), anyList(), anyInt()))
+        Mockito.when(databaseService.getSortedRelevantPageDTOs(anyList(), anyList(), anyInt(), anyInt()))
                 .thenReturn(new ArrayList<>())
                 .thenReturn(found);
 
-        List<PageDTO> actual = searchService.findRelevantPages(lemmas, sites, 10);
+        List<PageDTO> actual = searchService.findRelevantPages(lemmas, sites, 10, 0);
 
         assertAll("Должен быть возвращён список с одной страницей, должна быть удалена первая лемма",
                 () -> assertEquals(found, actual, "должна найтись одна страница"),
@@ -234,7 +234,7 @@ public class SearchServiceTest {
             Mockito.when(databaseService.filterPopularLemmasOut(anyList(),anyList(),anyDouble())).thenReturn(new ArrayList<>(){{
                 add("test");
             }});
-            doReturn(new ArrayList<PageDTO>()).when(searchSpy).findRelevantPages(anyList(),anyList(),anyInt());
+            doReturn(new ArrayList<PageDTO>()).when(searchSpy).findRelevantPages(anyList(),anyList(),anyInt(), anyInt());
 
             SearchException searchException = assertThrows(SearchException.class,
                     () -> searchSpy.search(new SearchRequest("test", "site", 0, 10)));

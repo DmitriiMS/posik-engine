@@ -57,7 +57,7 @@ public class SearchService {
             throw new SearchException("По запросу '" + request.getQuery() + "' ничего не найдено");
         }
 
-        foundPages = findRelevantPages(filteredLemmas, sitesToSearch, request.getLimit());
+        foundPages = findRelevantPages(filteredLemmas, sitesToSearch, request.getLimit(), request.getOffset());
 
         if (foundPages.size() == 0) {
             throw new SearchException("По запросу '" + request.getQuery() + "' ничего не найдено");
@@ -94,11 +94,11 @@ public class SearchService {
         }
     }
 
-    List<PageDTO> findRelevantPages(List<String> filteredLemmas, List<Site> sitesToSearch, int limit) {
+    List<PageDTO> findRelevantPages(List<String> filteredLemmas, List<Site> sitesToSearch, int limit, int offset) {
         List<PageDTO> foundPages;
         do {
             foundPages = commonContext.getDatabaseService().getSortedRelevantPageDTOs(filteredLemmas,
-                    sitesToSearch.stream().map(Site::getId).collect(Collectors.toList()), limit);
+                    sitesToSearch.stream().map(Site::getId).collect(Collectors.toList()), limit, offset);
             if (foundPages.size() > 0) {
                 break;
             }
