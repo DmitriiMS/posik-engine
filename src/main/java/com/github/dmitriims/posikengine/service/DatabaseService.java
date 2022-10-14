@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.Tuple;
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -55,7 +54,6 @@ public class DatabaseService {
         savePageToDataBase(site, page, originalLemmas, commonContext);
     }
 
-    @Transactional
     public void savePageToDataBase(Site site, Page page, List<Lemma> lemmas, CommonContext commonContext) {
         Page savedPage = pageRepository.findBySiteAndPathEquals(site, page.getPath());
         if (savedPage == null) {
@@ -72,7 +70,7 @@ public class DatabaseService {
         setIndexingStatusOnCompletion(site, commonContext);
     }
 
-    private void addPageToSavedPagesMap(Page page) {
+    public void addPageToSavedPagesMap(Page page) {
         if (!savedPagesPerSite.containsKey(page.getSite().getId())) {
             savedPagesPerSite.put(page.getSite().getId(), new HashSet<>());
         }
@@ -106,7 +104,7 @@ public class DatabaseService {
         savedPagesPerSite = new HashMap<>();
     }
 
-    private void dropOldIndexesAndDecrementLemmasFrequencies(Long pageId) {
+    public void dropOldIndexesAndDecrementLemmasFrequencies(Long pageId) {
         List<Index> indexesToDelete = indexRepository.findAllByPage_Id(pageId);
         Lemma lemmaToUpdate;
         int newFrequency;
@@ -123,13 +121,13 @@ public class DatabaseService {
         }
     }
 
-    private void saveNewLemmasAndIndexes(Page page, List<Lemma> newLemmas) {
+    public void saveNewLemmasAndIndexes(Page page, List<Lemma> newLemmas) {
         List<Lemma> lemmasFromDB = lemmaRepository.findAllBySiteAndLemmaIn(page.getSite(), newLemmas.stream().map(Lemma::getLemma).collect(Collectors.toList()));
         List<Lemma> savedLemmas = saveLemmas(newLemmas, lemmasFromDB);
         saveIndexes(page, newLemmas, savedLemmas);
     }
 
-    private List<Lemma> saveLemmas(List<Lemma> newLemmas, List<Lemma> lemmasFromDB) {
+    public List<Lemma> saveLemmas(List<Lemma> newLemmas, List<Lemma> lemmasFromDB) {
         List<Lemma> lemmasToFlush = new ArrayList<>();
         for (Lemma newLemma : newLemmas) {
             int j = lemmasFromDB.indexOf(newLemma);
@@ -144,7 +142,7 @@ public class DatabaseService {
         return lemmaRepository.saveAllAndFlush(lemmasToFlush);
     }
 
-    private void saveIndexes(Page page, List<Lemma> newLemmas, List<Lemma> savedLemmas) {
+    public void saveIndexes(Page page, List<Lemma> newLemmas, List<Lemma> savedLemmas) {
         List<Index> newIndexes = new ArrayList<>();
         for (Lemma lemma : savedLemmas) {
             int i = newLemmas.indexOf(lemma);
@@ -194,7 +192,7 @@ public class DatabaseService {
     }
 
 
-    private void setIndexingStatusOnCompletion(Site site, CommonContext commonContext) {
+    public void setIndexingStatusOnCompletion(Site site, CommonContext commonContext) {
         if (commonContext.isIndexing()) {
             setSiteStatusToIndexing(site);
         } else {
