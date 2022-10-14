@@ -1,14 +1,10 @@
 package com.github.dmitriims.posikengine.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+public interface PageDTO {
+    String getSiteUrl();
+    String getSiteName();
+    String getPath();
+    String getContent();
+    double getRelevance();
 
-@Data
-@AllArgsConstructor
-public class PageDTO {
-    String siteUrl;
-    String siteName;
-    String path;
-    String content;
-    double relevance;
 }

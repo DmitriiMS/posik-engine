@@ -1,11 +1,11 @@
 package com.github.dmitriims.posikengine.repositories;
 
 import com.github.dmitriims.posikengine.model.Page;
+import com.github.dmitriims.posikengine.dto.PageDTO;
 import com.github.dmitriims.posikengine.model.Site;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import javax.persistence.Tuple;
 import java.util.List;
 
 public interface PageRepository extends JpaRepository<Page, Long> {
@@ -23,8 +23,8 @@ public interface PageRepository extends JpaRepository<Page, Long> {
             value = "select distinct " +
                         "s.url as siteUrl, " +
                         "s.name as siteName, " +
-                        "p.path, " +
-                        "p.content, " +
+                        "p.path as path, " +
+                        "p.content as content, " +
                         "sum(i.rank) over (partition by p.path) as relevance " +
                     "from page p " +
                     "join index i on p.id = i.page_id " +
@@ -37,7 +37,7 @@ public interface PageRepository extends JpaRepository<Page, Long> {
                     "offset :offset",
             nativeQuery = true
     )
-    List<Tuple> getLimitedSortedPagesByLemmasAndPageIds(
+    List<PageDTO> getLimitedSortedPagesByLemmasAndPageIds(
             List<String> lemmas,
             List<Long> pageIds,
             int limit,

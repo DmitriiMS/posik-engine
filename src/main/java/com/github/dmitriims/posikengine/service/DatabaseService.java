@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.Tuple;
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -225,15 +224,8 @@ public class DatabaseService {
                 return new ArrayList<>();
             }
         }
-        List<Tuple> tuples = pageRepository.getLimitedSortedPagesByLemmasAndPageIds(lemmas, relevantPages, limit, 0);
-        return tuples.stream()
-                .map(t -> new PageDTO(
-                        t.get(0, String.class),
-                        t.get(1, String.class),
-                        t.get(2, String.class),
-                        t.get(3, String.class),
-                        t.get(4, Double.class)))
-                .collect(Collectors.toList());
+        List<PageDTO> foundPages = pageRepository.getLimitedSortedPagesByLemmasAndPageIds(lemmas, relevantPages, limit, 0);
+        return foundPages;
     }
 
     @Transactional

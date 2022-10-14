@@ -7,6 +7,8 @@ import com.github.dmitriims.posikengine.model.Site;
 import com.github.dmitriims.posikengine.service.CommonContext;
 import com.github.dmitriims.posikengine.service.DatabaseService;
 import com.github.dmitriims.posikengine.service.MorphologyService;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,6 +40,16 @@ public class SearchServiceTest {
     DatabaseService databaseService;
 
     SearchService searchService;
+
+    @Getter
+    @AllArgsConstructor
+    class TestPageDTO implements PageDTO {
+        String siteUrl;
+        String siteName;
+        String path;
+        String content;
+        double relevance;
+    }
 
 
     @BeforeEach
@@ -122,7 +134,7 @@ public class SearchServiceTest {
         site.setId(1L);
         List<Site> sites = Collections.singletonList(site);
 
-        PageDTO pageDTO = new PageDTO("test", "test", "test", "test", 4.2);
+        PageDTO pageDTO = new TestPageDTO("test", "test", "test", "test", 4.2);
         List<PageDTO> found = Collections.singletonList(pageDTO);
 
         Mockito.when(commonContext.getDatabaseService()).thenReturn(databaseService);
@@ -152,7 +164,7 @@ public class SearchServiceTest {
         site.setId(1L);
         List<Site> sites = Collections.singletonList(site);
 
-        PageDTO pageDTO = new PageDTO("test", "test", "test", "test", 4.2);
+        PageDTO pageDTO = new TestPageDTO("test", "test", "test", "test", 4.2);
         List<PageDTO> found = Collections.singletonList(pageDTO);
 
         Mockito.when(commonContext.getDatabaseService()).thenReturn(databaseService);
