@@ -45,7 +45,7 @@ public class SearchService {
 
         sitesToSearch = getSitesToSearch(request.getSite());
 
-        searchWordsNormalForms = commonContext.getMorphologyService().getAndCountLemmasInString(request.getQuery()).keySet().toArray(new String[0]);
+        searchWordsNormalForms = commonContext.getMorphologyService().getAndCountNormalFormsInString(request.getQuery()).keySet().toArray(new String[0]);
 
         if (searchWordsNormalForms.length == 0) {
             throw new SearchException("Не удалось выделить леммы для поиска из запроса");

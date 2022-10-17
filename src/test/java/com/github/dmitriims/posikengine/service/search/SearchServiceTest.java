@@ -197,7 +197,7 @@ public class SearchServiceTest {
             List<Site> sites = Collections.singletonList(new Site());
             doReturn(sites).when(searchSpy).getSitesToSearch(anyString());
             Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-            Mockito.when(morphologyService.getAndCountLemmasInString(anyString())).thenReturn(new HashMap<>());
+            Mockito.when(morphologyService.getAndCountNormalFormsInString(anyString())).thenReturn(new HashMap<>());
 
             SearchException searchException = assertThrows(SearchException.class,
                     () -> searchSpy.search(new SearchRequest("test", "site", 0, 10)));
@@ -210,7 +210,7 @@ public class SearchServiceTest {
             List<Site> sites = Collections.singletonList(new Site());
             doReturn(sites).when(searchSpy).getSitesToSearch(anyString());
             Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-            Mockito.when(morphologyService.getAndCountLemmasInString(anyString())).thenReturn(new HashMap<>(){{
+            Mockito.when(morphologyService.getAndCountNormalFormsInString(anyString())).thenReturn(new HashMap<>(){{
                 put("test", 1);
             }});
             Mockito.when(commonContext.getDatabaseService()).thenReturn(databaseService);
@@ -227,7 +227,7 @@ public class SearchServiceTest {
             List<Site> sites = Collections.singletonList(new Site());
             doReturn(sites).when(searchSpy).getSitesToSearch(anyString());
             Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-            Mockito.when(morphologyService.getAndCountLemmasInString(anyString())).thenReturn(new HashMap<>(){{
+            Mockito.when(morphologyService.getAndCountNormalFormsInString(anyString())).thenReturn(new HashMap<>(){{
                 put("test", 1);
             }});
             Mockito.when(commonContext.getDatabaseService()).thenReturn(databaseService);

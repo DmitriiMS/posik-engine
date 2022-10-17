@@ -2,8 +2,6 @@ package com.github.dmitriims.posikengine.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
 
 import javax.persistence.*;
 
@@ -41,8 +39,7 @@ public class Lemma {
     @Transient
     private double rank;
 
-    @OneToMany(mappedBy = "lemma", fetch = FetchType.LAZY)
-    @Cascade(CascadeType.DELETE)
+    @OneToMany(mappedBy = "lemma", fetch = FetchType.LAZY, cascade = javax.persistence.CascadeType.REMOVE, orphanRemoval = true)
     private Set<Index> indices;
 
     public Lemma() {

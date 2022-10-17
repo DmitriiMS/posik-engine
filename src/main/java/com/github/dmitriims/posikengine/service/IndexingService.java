@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,56 +46,6 @@ public class IndexingService {
         this.robotsParser = robotsParser;
         this.commonContext = commonContext;
     }
-
-    Runnable indexingMonitor = () -> {
-        try {
-            while (true) {
-                Thread.sleep(1000);
-                if (sitePools.isEmpty()) {
-                    commonContext.setIndexing(false);
-                    break;
-                }
-
-                Iterator<Map.Entry<Site, ForkJoinPool>> it = sitePools.entrySet().iterator();
-                while (it.hasNext()) {
-                    Map.Entry<Site, ForkJoinPool> pool = it.next();
-
-                    if (pool.getValue().isShutdown()) {
-                        log.info("ожидаю, пока рабочие завершат все текущие задачи для сайта " + pool.getKey().getUrl());
-                        if (!pool.getValue().awaitTermination(10, TimeUnit.SECONDS)) {
-                            log.warn("пул не остановился за заданный период ожидания, отпускаю фронт");
-                        }
-                        synchronized (commonContext.getDatabaseService()) {
-                            commonContext.getDatabaseService().cleanSavedPagesCache();
-                            commonContext.getDatabaseService().setSiteStatusToFailed(pool.getKey().getId(), "Индексация прервана пользователем");
-                        }
-                        log.info("индексация прервана для сайта " + pool.getKey().getUrl());
-                        commonContext.setAreAllSitesIndexing(false);
-                        it.remove();
-                        continue;
-                    }
-
-                    if (pool.getValue().isQuiescent()) {
-                        synchronized (commonContext.getDatabaseService()) {
-                            boolean indexedAnything = commonContext.getDatabaseService().removeDeletedPagesForSite(pool.getKey().getId());
-                            if(indexedAnything) {
-                                commonContext.getDatabaseService().setSiteStatusToIndexed(pool.getKey().getId());
-                            } else {
-                                commonContext.getDatabaseService().setSiteStatusToFailed(pool.getKey().getId(), "Ничего не проиндексировано");
-                            }
-                        }
-                        commonContext.setAreAllSitesIndexing(false);
-                        log.info("закончена индексация для сайта " + pool.getKey().getUrl());
-                        pool.getValue().shutdownNow();
-                        it.remove();
-                    }
-                }
-            }
-        } catch (InterruptedException e) {
-            log.error("Indexing-monitor прерван во время ожидания!");
-            throw new RuntimeException();
-        }
-    };
 
     public boolean isIndexing() {
         return commonContext.isIndexing();
@@ -139,10 +88,7 @@ public class IndexingService {
             addSiteAndStartIndexing(site, Integer.MAX_VALUE, fields);
         }
 
-        if (wasNotIndexing) {
-            indexingMonitorTread = new Thread(indexingMonitor, "Indexing-monitor");
-            indexingMonitorTread.start();
-        }
+        startMonitoringThreadIfWasNotIndexing(wasNotIndexing, "Indexing-monitor");
 
         return new IndexingStatusResponse(true, null);
     }
@@ -162,10 +108,7 @@ public class IndexingService {
         Site site = commonContext.getDatabaseService().getSiteByUrl(siteUrl);
         List<Field> fields = commonContext.getDatabaseService().getAllFields();
         addSiteAndStartIndexing(site, Integer.MAX_VALUE, fields);
-        if (wasNotIndexing) {
-            indexingMonitorTread = new Thread(indexingMonitor, "Indexing-monitor");
-            indexingMonitorTread.start();
-        }
+        startMonitoringThreadIfWasNotIndexing(wasNotIndexing, "Indexing-monitor");
         return new IndexingStatusResponse(true, null);
     }
 
@@ -225,10 +168,7 @@ public class IndexingService {
 
         Site site = commonContext.getDatabaseService().getSiteByUrl(siteUrl);
         addOnePageAndIndex(site, url, fields);
-        if (wasNotIndexing) {
-            indexingMonitorTread = new Thread(indexingMonitor, "Indexing-Monitor");
-            indexingMonitorTread.start();
-        }
+        startMonitoringThreadIfWasNotIndexing(wasNotIndexing, "Indexing-Monitor");
         return new IndexingStatusResponse(true, null);
     }
 
@@ -287,6 +227,13 @@ public class IndexingService {
         ForkJoinPool pool = new ForkJoinPool();
         BaseRobotRules robotRules = robotsParser.parseContent(topLevelSite + "/robots.txt", getRobotsTxt(topLevelSite), "text/plain", commonContext.getUserAgent());
         return new CrawlerContext(site, pool, limit, new HashSet<>(fields), robotRules);
+    }
+
+    private void startMonitoringThreadIfWasNotIndexing(boolean wasNotIndexing, String name) {
+        if (wasNotIndexing) {
+            indexingMonitorTread = new Thread(new IndexingMonitor(sitePools, commonContext), name);
+            indexingMonitorTread.start();
+        }
     }
 
 }

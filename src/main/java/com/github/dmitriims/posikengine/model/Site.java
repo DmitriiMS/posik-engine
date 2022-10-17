@@ -3,9 +3,6 @@ package com.github.dmitriims.posikengine.model;
 import lombok.Getter;
 import lombok.Setter;
 
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
-
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -40,12 +37,10 @@ public class Site {
     @Column(name = "last_error")
     private String lastError;
 
-    @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)
-    @Cascade(CascadeType.DELETE)
+    @OneToMany(mappedBy = "site", fetch = FetchType.LAZY, cascade = javax.persistence.CascadeType.REMOVE, orphanRemoval = true)
     private Set<Page> pages;
 
-    @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)
-    @Cascade(CascadeType.DELETE)
+    @OneToMany(mappedBy = "site", fetch = FetchType.LAZY, cascade = javax.persistence.CascadeType.REMOVE, orphanRemoval = true)
     private Set<Lemma> lemmas;
 
     public Site() {

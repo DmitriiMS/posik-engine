@@ -222,14 +222,14 @@ public class MorphologyServiceTest {
             put("word", 1);
         }};
         Map<String, Integer> actual = morphologyService.
-                getAndCountLemmasInString("First we parsed the first word which was the first to parse. Но не 42!");
+                getAndCountNormalFormsInString("First we parsed the first word which was the first to parse. Но не 42!");
         assertIterableEquals(expected.entrySet(), actual.entrySet());
     }
     @Test
     @DisplayName("getAndCountLemmasInString - если мусор, то ничего не вернёт")
     public void testGetAndCountLemmasInStringGarbage() {
         Map<String, Integer> expected  = new TreeMap<>();
-        Map<String, Integer> actual = morphologyService.getAndCountLemmasInString("猫 или 鯨? Тьфу drat!");
+        Map<String, Integer> actual = morphologyService.getAndCountNormalFormsInString("猫 или 鯨? Тьфу drat!");
         assertIterableEquals(expected.entrySet(), actual.entrySet());
     }
 }

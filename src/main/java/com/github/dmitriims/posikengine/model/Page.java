@@ -2,8 +2,6 @@ package com.github.dmitriims.posikengine.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -43,8 +41,7 @@ public class Page {
     @Column(name = "lemmas_hashcode")
     private int lemmasHashcode;
 
-    @OneToMany(mappedBy = "page", fetch = FetchType.LAZY)
-    @Cascade(CascadeType.DELETE)
+    @OneToMany(mappedBy = "page", fetch = FetchType.LAZY, cascade = javax.persistence.CascadeType.REMOVE, orphanRemoval = true)
     private Set<Index> indices;
 
     public Page() {

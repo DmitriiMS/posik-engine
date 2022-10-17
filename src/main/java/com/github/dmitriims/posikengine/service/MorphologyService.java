@@ -25,7 +25,7 @@ public class MorphologyService {
         this.englishLuceneMorph = englishLuceneMorph;
     }
 
-    public Map<String, Integer> getAndCountLemmasInString(String input) {
+    public Map<String, Integer> getAndCountNormalFormsInString(String input) {
         Map<String, Integer> dictionaryWithCount = new TreeMap<>();
         String[] words = splitStringToLowercaseWords(input);
 
@@ -65,7 +65,6 @@ public class MorphologyService {
                         .split(" "))
                 .filter(s -> !s.isBlank()).toArray(String[]::new);
     }
-
 
     boolean isRussianGarbage(List<String> morphInfos) {
         for(String variant : morphInfos) {

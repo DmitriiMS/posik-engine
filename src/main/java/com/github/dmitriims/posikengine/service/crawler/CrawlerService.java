@@ -136,7 +136,7 @@ public class CrawlerService extends RecursiveAction {
             Elements fieldElements = doc.select(f.getSelector());
             for(Element fieldElement : fieldElements) {
                 String fieldText = fieldElement.text();
-                for (Map.Entry<String, Integer> lemmaCount : commonContext.getMorphologyService().getAndCountLemmasInString(fieldText).entrySet()) {
+                for (Map.Entry<String, Integer> lemmaCount : commonContext.getMorphologyService().getAndCountNormalFormsInString(fieldText).entrySet()) {
                     Lemma tempLemma = new Lemma();
                     tempLemma.setSite(context.getSite());
                     tempLemma.setLemma(lemmaCount.getKey());

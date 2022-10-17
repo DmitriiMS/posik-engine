@@ -11,4 +11,9 @@ public class DefaultController {
     public String index() {
         return "index";
     }
+
+    @RequestMapping(value ="/")
+    public String notAdmin() {
+        return "not-admin";
+    }
 }
