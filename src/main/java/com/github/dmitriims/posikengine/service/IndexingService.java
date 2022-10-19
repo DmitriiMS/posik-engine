@@ -167,6 +167,7 @@ public class IndexingService {
         }
 
         Site site = commonContext.getDatabaseService().getSiteByUrl(siteUrl);
+        commonContext.setIndexingOnePage(true);
         addOnePageAndIndex(site, url, fields);
         startMonitoringThreadIfWasNotIndexing(wasNotIndexing, "Indexing-Monitor");
         return new IndexingStatusResponse(true, null);

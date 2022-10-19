@@ -49,7 +49,12 @@ public class IndexingMonitor implements Runnable {
 
                     if (pool.getValue().isQuiescent()) {
                         synchronized (commonContext.getDatabaseService()) {
-                            boolean indexedAnything = commonContext.getDatabaseService().removeDeletedPagesForSite(pool.getKey().getId());
+                            boolean indexedAnything = true;
+                            if(commonContext.isIndexingOnePage()) {
+                                commonContext.setIndexingOnePage(false);
+                            } else {
+                                indexedAnything = commonContext.getDatabaseService().removeDeletedPagesForSite(pool.getKey().getId());
+                            }
                             if(indexedAnything) {
                                 commonContext.getDatabaseService().setSiteStatusToIndexed(pool.getKey().getId());
                             } else {

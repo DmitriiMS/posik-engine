@@ -16,6 +16,7 @@ public class CommonContext {
 
     private boolean isIndexing = false;
     private boolean areAllSitesIndexing = false;
+    private boolean isIndexingOnePage = false;
     private String indexingMessage = "";
 
     public CommonContext(
