@@ -15,5 +15,5 @@ public class SearchResponse {
     private boolean result;
     private String message;
     private int count;
-    private List<PageResponse> data;
+    private List<FoundPage> data;
 }

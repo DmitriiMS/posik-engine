@@ -3,7 +3,7 @@ package com.github.dmitriims.posikengine.dto;
 import lombok.Data;
 
 @Data
-public class PageResponse {
+public class FoundPage {
     private String site;
     private String siteName;
     private String uri;

@@ -1,7 +1,7 @@
 package com.github.dmitriims.posikengine.service.search;
 
 import com.github.dmitriims.posikengine.dto.PageDTO;
-import com.github.dmitriims.posikengine.dto.PageResponse;
+import com.github.dmitriims.posikengine.dto.FoundPage;
 import com.github.dmitriims.posikengine.dto.SearchRequest;
 import com.github.dmitriims.posikengine.dto.SearchResponse;
 import com.github.dmitriims.posikengine.exceptions.SearchException;
@@ -29,7 +29,6 @@ public class SearchService {
     }
 
     private static final double THRESHOLD = 0.97;
-    private static final String END_OF_SENTENCE = "[\\.!?]\\s*";
 
     private final Logger log = LoggerFactory.getLogger(SearchService.class);
 
@@ -63,17 +62,21 @@ public class SearchService {
             throw new SearchException("По запросу '" + request.getQuery() + "' ничего не найдено");
         }
 
+        String finalQuery = request.getQuery();
         if (filteredLemmas.size() < searchWordsNormalForms.length) {
-            String correctedQuery = correctQuery(filteredLemmas, request.getQuery());
+            finalQuery = correctQuery(filteredLemmas, finalQuery);
             message = "По запросу '" + request.getQuery() + "' ничего не найдено. " +
-                    "Скорректированный запрос: '" + correctedQuery + "'.";
+                    "Скорректированный запрос: '" + finalQuery + "'.";
             log.info(message);
         }
 
         double maxRelevance = foundPages.get(0).getRelevance();
         ForkJoinPool pool = ForkJoinPool.commonPool();
-        PageProcessor pp = new PageProcessor(foundPages, filteredLemmas, maxRelevance, 4, commonContext.getMorphologyService(), END_OF_SENTENCE);
-        List<PageResponse> searchResults = pool.submit(pp).join();
+        PageProcessor pp = new PageProcessor(
+                foundPages, List.of(commonContext.getMorphologyService().splitStringToLowercaseWords(finalQuery)),
+                maxRelevance, 4, commonContext.getMorphologyService()
+        );
+        List<FoundPage> searchResults = pool.submit(pp).join();
 
         log.info("search for request \"" + request.getQuery() + "\" complete, found " + searchResults.size() + " pages");
         return new SearchResponse(

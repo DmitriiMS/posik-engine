@@ -1,7 +1,7 @@
 package com.github.dmitriims.posikengine.service.search;
 
 import com.github.dmitriims.posikengine.dto.PageDTO;
-import com.github.dmitriims.posikengine.dto.PageResponse;
+import com.github.dmitriims.posikengine.dto.FoundPage;
 import com.github.dmitriims.posikengine.service.MorphologyService;
 import lombok.AllArgsConstructor;
 import org.jsoup.Jsoup;
@@ -13,17 +13,16 @@ import java.util.concurrent.RecursiveTask;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
-public class PageProcessor  extends RecursiveTask<List<PageResponse>> {
+public class PageProcessor extends RecursiveTask<List<FoundPage>> {
 
     private List<PageDTO> pagesToProcess;
-    private List<String> searchLemmas;
+    private List<String> searchQuery;
     private double maxRelevance;
     private int chunkSize;
     private MorphologyService morphologyService;
-    private String END_OF_SENTENCE;
 
     @Override
-    protected List<PageResponse> compute() {
+    protected List<FoundPage> compute() {
         if (pagesToProcess.size() <= chunkSize) {
             return processPages();
         } else {
@@ -38,73 +37,93 @@ public class PageProcessor  extends RecursiveTask<List<PageResponse>> {
     List<PageProcessor> splitTasks() {
         List<PageProcessor> subtasks = new ArrayList<>();
         for (int i = 0; i < pagesToProcess.size(); i += chunkSize) {
-            int endIndex = i + chunkSize;
-            if (endIndex > pagesToProcess.size()) {
-                endIndex = pagesToProcess.size();
-            }
-            subtasks.add(new PageProcessor(pagesToProcess.subList(i, endIndex), searchLemmas, maxRelevance, chunkSize, morphologyService, END_OF_SENTENCE));
+            int endIndex = Math.min(i + chunkSize, pagesToProcess.size());
+            subtasks.add(new PageProcessor(pagesToProcess.subList(i, endIndex), searchQuery, maxRelevance, chunkSize, morphologyService));
         }
         return subtasks;
     }
 
-    List<PageResponse> processPages() {
-        List<PageResponse> result = new ArrayList<>();
+    List<FoundPage> processPages() {
+        List<FoundPage> result = new ArrayList<>();
         for (PageDTO page : pagesToProcess) {
-            PageResponse pageResponse = convertPageDtoToResponse(page, maxRelevance, searchLemmas);
-            result.add(pageResponse);
+            FoundPage foundPage = convertPageDtoToResponse(page, maxRelevance, searchQuery);
+            result.add(foundPage);
         }
 
         return result;
     }
 
-    PageResponse convertPageDtoToResponse(PageDTO page, double maxRelevance, List<String> searchLemmas) {
+    FoundPage convertPageDtoToResponse(PageDTO page, double maxRelevance, List<String> searchQuery) {
 
-        PageResponse pageResponse = new PageResponse();
-        Document contents = Jsoup.parse(page.getContent());
+        FoundPage foundPage = new FoundPage();
+        Document content = Jsoup.parse(page.getContent());
 
-        pageResponse.setSite(page.getSiteUrl());
-        pageResponse.setSiteName(page.getSiteName());
-        pageResponse.setUri(page.getPath());
-        pageResponse.setTitle(contents.select("title").text());
-        pageResponse.setSnippet(getSnippetFromPage(contents.select("body").text(), searchLemmas));
-        pageResponse.setRelevance(page.getRelevance() / maxRelevance);
+        foundPage.setSite(page.getSiteUrl());
+        foundPage.setSiteName(page.getSiteName());
+        foundPage.setUri(page.getPath());
+        foundPage.setTitle(content.select("title").text());
+        foundPage.setSnippet(getSnippetFromPage(content.select("body").text(), searchQuery));
+        foundPage.setRelevance(page.getRelevance() / maxRelevance);
 
-        return pageResponse;
+        return foundPage;
     }
 
-    String getSnippetFromPage(String text, List<String> searchLemmas) {
-        List<String> result = new ArrayList<>();
-
-        List<String> iterableSearchTerms = new ArrayList<>(searchLemmas);
-
-        String[] sentences = text.split(END_OF_SENTENCE);
+    String getSnippetFromPage(String text, List<String> searchQuery) {
+        List<String> queryLocalCopy = new ArrayList<>(searchQuery);
+        List<String> words = List.of(text.split("\\b"));
         ListIterator<String> iterator;
-        boolean isFound = false;
-        for (String sentence : sentences) {
-            for (String word : morphologyService.splitStringToWords(sentence)) {
-                iterator = iterableSearchTerms.listIterator();
-                String lowercaseWord = word.toLowerCase(Locale.ROOT);
-                while(iterator.hasNext()) {
-                    String searchTerm = iterator.next();
-                    for (String wordNormalForm : morphologyService.getNormalFormOfAWord(lowercaseWord)) {
-                        if (!wordNormalForm.equals(searchTerm)) {
-                            continue;
-                        }
-                        isFound = true;
-                        sentence = sentence.replaceFirst(word, "<b>" + word + "</b>");
-                        iterator.remove();
-                    }
-                }
+        List<Integer> foundWordsIndexes = new ArrayList<>();
+
+        for (String word : words) {
+            if(queryLocalCopy.isEmpty()) {
+                break;
             }
-            if (isFound) {
-                isFound = false;
-                result.add(sentence);
-                if (iterableSearchTerms.isEmpty()) {
-                    break;
+            iterator = queryLocalCopy.listIterator();
+            while(iterator.hasNext()) {
+                List<String> wordNormalForm = new ArrayList<>(morphologyService.getNormalFormOfAWord(word.toLowerCase(Locale.ROOT)));
+                wordNormalForm.retainAll(morphologyService.getNormalFormOfAWord(iterator.next()));
+                if(wordNormalForm.isEmpty()) {
+                    continue;
                 }
+                foundWordsIndexes.add(words.indexOf(word));
+                iterator.remove();
             }
         }
 
-        return String.join("<...>", result);
+        return constructSnippetWithHighlight(foundWordsIndexes, new ArrayList<>(words));
+    }
+
+    String constructSnippetWithHighlight(List<Integer> foundWordsIndexes, List<String> words) {
+        List<String> snippetCollector = new ArrayList<>();
+        int beginning, end, before, after, index, prevIndex;
+        before = 12;
+        after = 6;
+
+        foundWordsIndexes.sort(Integer::compareTo);
+
+        for(int i : foundWordsIndexes) {
+            words.set(i, "<b>" + words.get(i) + "</b>");
+        }
+
+        index = foundWordsIndexes.get(0);
+        beginning = Math.max(0, index - before);
+        end = Math.min(words.size() - 1, index + after);
+
+        for (int i = 1; i <= foundWordsIndexes.size(); i++) {
+            if(i == foundWordsIndexes.size()) {
+                snippetCollector.add(String.join("", words.subList(beginning, end)));
+                break;
+            }
+            prevIndex = index;
+            index = foundWordsIndexes.get(i);
+            if(index - before <= prevIndex) {
+                end = Math.min(words.size() - 1, index + after);
+                continue;
+            }
+            snippetCollector.add(String.join("", words.subList(beginning, end)));
+            beginning = Math.max(0, index - before);
+            end = Math.min(words.size() - 1, index + after);
+        }
+        return String.join("...", snippetCollector);
     }
 }

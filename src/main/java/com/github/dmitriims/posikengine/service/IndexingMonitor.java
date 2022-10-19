@@ -64,7 +64,7 @@ public class IndexingMonitor implements Runnable {
                 }
             }
         } catch (InterruptedException e) {
-            log.error("Indexing-monitor прерван во время ожидания!");
+            log.error(Thread.currentThread().getName() + " прерван во время ожидания!");
             throw new RuntimeException();
         }
     }
