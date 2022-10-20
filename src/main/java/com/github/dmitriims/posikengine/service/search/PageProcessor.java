@@ -4,8 +4,6 @@ import com.github.dmitriims.posikengine.dto.PageDTO;
 import com.github.dmitriims.posikengine.dto.FoundPage;
 import com.github.dmitriims.posikengine.service.MorphologyService;
 import lombok.AllArgsConstructor;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
 import java.util.*;
 import java.util.concurrent.ForkJoinTask;
@@ -46,27 +44,8 @@ public class PageProcessor extends RecursiveTask<List<FoundPage>> {
     List<FoundPage> processPages() {
         List<FoundPage> result = new ArrayList<>();
         for (PageDTO page : pagesToProcess) {
-            FoundPage foundPage = convertPageDtoToResponse(page, maxRelevance, searchQuery);
-            result.add(foundPage);
+            result.add(new PageDtoAdapter(page, maxRelevance, searchQuery, morphologyService));
         }
-
         return result;
     }
-
-    FoundPage convertPageDtoToResponse(PageDTO page, double maxRelevance, List<String> searchQuery) {
-
-        FoundPage foundPage = new FoundPage();
-        Document content = Jsoup.parse(page.getContent());
-
-        foundPage.setSite(page.getSiteUrl());
-        foundPage.setSiteName(page.getSiteName());
-        foundPage.setUri(page.getPath());
-        foundPage.setTitle(content.select("title").text());
-        foundPage.setSnippet(SnippetBuilder.getSnippetFromPage(morphologyService, content.select("body").text(), searchQuery));
-        foundPage.setRelevance(page.getRelevance() / maxRelevance);
-
-        return foundPage;
-    }
-
-
 }
