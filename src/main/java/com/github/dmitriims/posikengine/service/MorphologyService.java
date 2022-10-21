@@ -25,20 +25,6 @@ public class MorphologyService {
         this.englishLuceneMorph = englishLuceneMorph;
     }
 
-    public Map<String, Integer> getAndCountNormalFormsInString(String input) {
-        Map<String, Integer> dictionaryWithCount = new TreeMap<>();
-        String[] words = splitStringToLowercaseWords(input);
-
-        for (String word : words) {
-            List<String> normalForms = getNormalFormOfAWord(word);
-            if (normalForms.size() == 0) {
-                continue;
-            }
-            normalForms.forEach(w -> dictionaryWithCount.put(w, dictionaryWithCount.getOrDefault(w, 0) + 1));
-        }
-        return dictionaryWithCount;
-    }
-
     public List<String> getNormalFormOfAWord(String word) {
         word = word.replaceAll("ё", "е");
         if (russianLuceneMorph.checkString(word) && !isRussianGarbage(russianLuceneMorph.getMorphInfo(word))) {
