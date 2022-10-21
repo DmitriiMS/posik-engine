@@ -1,5 +1,6 @@
 package com.github.dmitriims.posikengine.service;
 
+import com.github.dmitriims.posikengine.dto.FilteredLemmaDTO;
 import com.github.dmitriims.posikengine.dto.PageDTO;
 import com.github.dmitriims.posikengine.model.*;
 import com.github.dmitriims.posikengine.repositories.*;
@@ -203,13 +204,10 @@ public class DatabaseService {
 
     @Transactional
     public List<String> filterPopularLemmasOut(List<Site> sites, List<String> lemmas, double threshold) {
-        List<Tuple> tuples = lemmaRepository.filterVeryPopularLemmas(
+        return lemmaRepository.filterVeryPopularLemmas(
                 sites.stream().map(Site::getId).collect(Collectors.toList()),
                 lemmas,
-                threshold);
-        return tuples.stream()
-                .map(t -> t.get(0, String.class))
-                .collect(Collectors.toList());
+                threshold).stream().map(FilteredLemmaDTO::getLemma).toList();
     }
 
     @Transactional

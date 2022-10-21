@@ -1,5 +1,6 @@
 package com.github.dmitriims.posikengine.repositories;
 
+import com.github.dmitriims.posikengine.dto.FilteredLemmaDTO;
 import com.github.dmitriims.posikengine.model.Lemma;
 import com.github.dmitriims.posikengine.model.Site;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,7 +16,7 @@ public interface LemmaRepository extends JpaRepository<Lemma, Long> {
 
     @Query(
             value = "select " +
-                "distinct l.lemma, " +
+                "distinct l.lemma as lemma, " +
                 "sum(l.frequency) over (partition by l.lemma) as fr " +
             "from lemma l " +
             "join index i on l.id = i.lemma_id " +
@@ -25,7 +26,7 @@ public interface LemmaRepository extends JpaRepository<Lemma, Long> {
             "having count(i.page_id) < (select cast(count(p.id) as double precision) * :threshold from page p) " +
             "order by fr asc",
             nativeQuery = true)
-    List<Tuple> filterVeryPopularLemmas(
+    List<FilteredLemmaDTO> filterVeryPopularLemmas(
             List<Long> siteIds,
             List<String> lemmas,
             double threshold);
