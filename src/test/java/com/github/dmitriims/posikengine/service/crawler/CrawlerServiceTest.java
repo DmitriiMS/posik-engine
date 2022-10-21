@@ -1,9 +1,9 @@
 package com.github.dmitriims.posikengine.service.crawler;
 
-import com.github.dmitriims.posikengine.exceptions.IndexingStatusException;
 import com.github.dmitriims.posikengine.model.*;
 import com.github.dmitriims.posikengine.service.CommonContext;
 import com.github.dmitriims.posikengine.service.DatabaseService;
+import com.github.dmitriims.posikengine.service.LemmaUtils;
 import com.github.dmitriims.posikengine.service.MorphologyService;
 import crawlercommons.robots.BaseRobotRules;
 import crawlercommons.robots.SimpleRobotRules;
@@ -15,7 +15,6 @@ import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -362,219 +361,6 @@ public class CrawlerServiceTest {
         Page actual = crawler.getPageFromResponse(response);
 
         assertEquals(expected, actual);
-    }
-
-    @Nested
-    @DisplayName("тестирование подсчёта лемм")
-    class LemmaRankingTest {
-
-        Set<Field> fields;
-        MorphologyService morphologyService;
-
-        @BeforeEach
-        public void init() throws IOException {
-
-            Field title = new Field();
-            title.setName("title");
-            title.setSelector("title");
-            title.setWeight(1.);
-            Field h1 = new Field();
-            h1.setName("h1");
-            h1.setSelector("h1");
-            h1.setWeight(0.9);
-            Field body = new Field();
-            body.setName("body");
-            body.setSelector("body");
-            body.setWeight(0.8);
-            fields = new HashSet<>(){{
-                add(title);
-                add(h1);
-                add(body);
-            }};
-
-            RussianLuceneMorphology rlm = new RussianLuceneMorphology();
-            EnglishLuceneMorphology elm = new EnglishLuceneMorphology();
-            String notAWord = "(?:\\.*\\s+\\-\\s+\\.*)|[^\\-а-яА-Яa-zA-Z\\d\\ё\\Ё]+";
-            morphologyService = new MorphologyService(notAWord,rlm,elm);
-        }
-
-        @Test
-        @DisplayName("getAndRankAllLemmas - одна лемма в title")
-        public void testGetAndRankAllLemmasOneTitle() throws IOException {
-            String html = "<html><head><title>title!</title></head><body></body></html>";
-            Document doc = Jsoup.parse(html);
-
-            Mockito.when(crawlerContext.getFields()).thenReturn(fields);
-            Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-
-            Lemma expectedLemma = new Lemma();
-            expectedLemma.setSite(site);
-            expectedLemma.setLemma("title");
-            expectedLemma.setFrequency(1);
-            expectedLemma.setRank(1.0);
-            List<Lemma> expected = new ArrayList<>(){{
-                add(expectedLemma);
-            }};
-
-            List<Lemma> actual = crawler.getAndRankAllLemmas(doc);
-
-            assertAll("не должно быть лишних лемм, они равны и у них совпадают частота и ранг",
-                    () -> assertEquals(expected.size(), actual.size(), "размер массивов должен быть одинаковый"),
-                    () -> assertEquals(expected.get(0), actual.get(0), "леммы должны быть равны (по equals)"),
-                    () -> assertEquals(expected.get(0).getFrequency(),actual.get(0).getFrequency(), "частоты должны быть равны"),
-                    () -> assertEquals(expected.get(0).getRank(),actual.get(0).getRank(), "ранги должны быть равны"));
-        }
-
-        @Test
-        @DisplayName("getAndRankAllLemmas - одна лемма в body")
-        public void testGetAndRankAllLemmasOneBody() throws IOException {
-            String html = "<html><head><title></title></head><body>BODY!</body></html>";
-            Document doc = Jsoup.parse(html);
-
-            Mockito.when(crawlerContext.getFields()).thenReturn(fields);
-            Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-
-            Lemma expectedLemma = new Lemma();
-            expectedLemma.setSite(site);
-            expectedLemma.setLemma("body");
-            expectedLemma.setFrequency(1);
-            expectedLemma.setRank(0.8);
-            List<Lemma> expected = new ArrayList<>(){{
-                add(expectedLemma);
-            }};
-
-            List<Lemma> actual = crawler.getAndRankAllLemmas(doc);
-
-            assertAll("не должно быть лишних лемм, они равны и у них совпадают частота и ранг",
-                    () -> assertEquals(expected.size(), actual.size(), "размер массивов должен быть одинаковый"),
-                    () -> assertEquals(expected.get(0), actual.get(0), "леммы должны быть равны (по equals)"),
-                    () -> assertEquals(expected.get(0).getFrequency(),actual.get(0).getFrequency(), "частоты должны быть равны"),
-                    () -> assertEquals(expected.get(0).getRank(),actual.get(0).getRank(), "ранги должны быть равны"));
-
-        }
-
-        @Test
-        @DisplayName("getAndRankAllLemmas - одна лемма и в title и в body")
-        public void testGetAndRankAllLemmasOneInBoth() throws IOException {
-            String html = "<html><head><title>Parse?</title></head><body>Parsed!</body></html>";
-            Document doc = Jsoup.parse(html);
-
-            Mockito.when(crawlerContext.getFields()).thenReturn(fields);
-            Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-
-            Lemma expectedLemma = new Lemma();
-            expectedLemma.setSite(site);
-            expectedLemma.setLemma("parse");
-            expectedLemma.setFrequency(2);
-            expectedLemma.setRank(1.8);
-            List<Lemma> expected = new ArrayList<>(){{
-                add(expectedLemma);
-            }};
-
-            List<Lemma> actual = crawler.getAndRankAllLemmas(doc);
-
-            assertAll("не должно быть лишних лемм, они равны и у них совпадают частота и ранг",
-                    () -> assertEquals(expected.size(), actual.size(), "размер массивов должен быть одинаковый"),
-                    () -> assertEquals(expected.get(0), actual.get(0), "леммы должны быть равны (по equals)"),
-                    () -> assertEquals(expected.get(0).getFrequency(),actual.get(0).getFrequency(), "частоты должны быть равны"),
-                    () -> assertEquals(expected.get(0).getRank(),actual.get(0).getRank(), "ранги должны быть равны"));
-
-        }
-
-        @Test
-        @DisplayName("getAndRankAllLemmas - лемм нет")
-        public void testGetAndRankAllLemmasNoLemmas() throws IOException {
-            String html = "<html><head><title>:%!)))</title></head><body>to the 下!</body></html>";
-            Document doc = Jsoup.parse(html);
-
-            Mockito.when(crawlerContext.getFields()).thenReturn(fields);
-            Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-
-            List<Lemma> expected = new ArrayList<>();
-
-            List<Lemma> actual = crawler.getAndRankAllLemmas(doc);
-
-            assertIterableEquals(expected, actual);
-        }
-
-        @Test
-        @DisplayName("getAndRankAllLemmas - две леммы, одна везде, вторая в теле")
-        public void testGetAndRankAllLemmasTwoLemmas() throws IOException {
-            String html = "<html><head><title>Title Title</title></head><body>Parsed parsed title!</body></html>";
-            Document doc = Jsoup.parse(html);
-
-            Mockito.when(crawlerContext.getFields()).thenReturn(fields);
-            Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-
-            Lemma lemma1 = new Lemma();
-            lemma1.setSite(site);
-            lemma1.setLemma("parse");
-            lemma1.setFrequency(2);
-            lemma1.setRank(1.6);
-
-            Lemma lemma2 = new Lemma();
-            lemma2.setSite(site);
-            lemma2.setLemma("title");
-            lemma2.setFrequency(3);
-            lemma2.setRank(2.8);
-
-            List<Lemma> expected = new ArrayList<>(){{
-                add(lemma1);
-                add(lemma2);
-            }};
-
-            List<Lemma> actual = crawler.getAndRankAllLemmas(doc);
-
-            actual.sort(Comparator.comparing(Lemma::getFrequency));
-
-            assertAll("Массивы должны быть одинаковыми по equals и у лемм должны совпадать частоты и ранги",
-                    () -> assertIterableEquals(expected, actual, "массивы должны совпадать"),
-                    () -> assertEquals(expected.get(0).getFrequency(),actual.get(0).getFrequency(), "частоты первых лемм должны быть равны"),
-                    () -> assertEquals(expected.get(0).getRank(),actual.get(0).getRank(), "ранги первых лемм должны быть равны"),
-                    () -> assertEquals(expected.get(1).getFrequency(),actual.get(1).getFrequency(), "частоты вторых лемм должны быть равны"),
-                    () -> assertEquals(expected.get(1).getRank(),actual.get(1).getRank(), "ранги вторых лемм должны быть равны"));
-        }
-
-        @Test
-        @DisplayName("getAndRankAllLemmas - две леммы, одна в title, одна в h1 и body")
-        public void testGetAndRankAllLemmasThreeLemmasWithH1() throws IOException {
-            String html = "<html><head><title>Title</title></head><body><h1>body</h1>body</body></html>";
-            Document doc = Jsoup.parse(html);
-
-            Mockito.when(crawlerContext.getFields()).thenReturn(fields);
-            Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-
-            Lemma lemma1 = new Lemma();
-            lemma1.setSite(site);
-            lemma1.setLemma("body");
-            lemma1.setFrequency(2);
-            lemma1.setRank(1.7);
-
-            Lemma lemma2 = new Lemma();
-            lemma2.setSite(site);
-            lemma2.setLemma("title");
-            lemma2.setFrequency(1);
-            lemma2.setRank(1);
-
-            List<Lemma> expected = new ArrayList<>(){{
-                add(lemma2);
-                add(lemma1);
-            }};
-            String expectedHtml = "<html><head><title>Title</title></head><body>body</body></html>";
-
-            List<Lemma> actual = crawler.getAndRankAllLemmas(doc);
-            String actualHtml = doc.outerHtml().replaceAll("\n|\s", "");
-
-            actual.sort(Comparator.comparing(Lemma::getFrequency));
-
-            assertAll("Массивы должны быть одинаковыми по equals и у лемм должны совпадать частоты и ранги, из документа должен быть удалён тег h1",
-                    () -> assertIterableEquals(expected, actual, "массивы должны совпадать"),
-                    () -> assertEquals(expected.get(0).getFrequency(),actual.get(0).getFrequency(), "частоты первых лемм должны быть равны"),
-                    () -> assertEquals(expected.get(0).getRank(),actual.get(0).getRank(), "ранги первых лемм должны быть равны"),
-                    () -> assertEquals(expected.get(1).getFrequency(),actual.get(1).getFrequency(), "частоты вторых лемм должны быть равны"),
-                    () -> assertEquals(expected.get(1).getRank(),actual.get(1).getRank(), "ранги вторых лемм должны быть равны"),
-                    () -> assertEquals(expectedHtml, actualHtml, "h1 должен быть удалён из документа"));
-        }
     }
 
     @Nested

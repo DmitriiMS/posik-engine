@@ -23,7 +23,6 @@ public class PageProcessorTest {
 
     MorphologyService morphologyService = new MorphologyService(notAWord, russianLuceneMorphology, englishLuceneMorphology);
 
-
     PageProcessor pageProcessor;
 
     public PageProcessorTest() throws IOException {
@@ -35,8 +34,7 @@ public class PageProcessorTest {
                 new ArrayList<>(),
                 10.,
                 2,
-                morphologyService,
-                "[\\.!?]\\s*");
+                morphologyService);
     }
 
     @Test
@@ -49,7 +47,7 @@ public class PageProcessorTest {
         }};
         String text = "Мама мыла раму.";
         String expected = "<b>Мама</b> <b>мыла</b> <b>раму</b>";
-        String actual = pageProcessor.getSnippetFromPage(text, lemmas);
+        String actual = SnippetBuilder.getSnippetFromPage(morphologyService, text, lemmas);
 
         assertEquals(expected, actual);
     }
@@ -66,10 +64,10 @@ public class PageProcessorTest {
                 "Ведро было полное. " +
                 "Снова пора мыть! " +
                 "Злые голуби опять испачкали всю раму.";
-        String expected = "<b>Мама</b> Кузьмы тяжело вздохнула<...>" +
-                "Снова пора <b>мыть</b><...>" +
-                "Злые голуби опять испачкали всю <b>раму</b>";
-        String actual = pageProcessor.getSnippetFromPage(text, lemmas);
+        String expected = "<b>Мама</b> Кузьмы тяжело " +
+                "...вздохнула. Ведро было полное. " +
+                "Снова пора <b>мыть</b>! Злые голуби опять испачкали всю <b>раму</b>";
+        String actual = SnippetBuilder.getSnippetFromPage(morphologyService, text, lemmas);
 
         assertEquals(expected, actual);
     }

@@ -208,28 +208,4 @@ public class MorphologyServiceTest {
         List<String> actual = morphologyService.getNormalFormOfAWord("猫");
         assertIterableEquals(expected, actual);
     }
-
-    @Test
-    @DisplayName("getAndCountLemmasInString - подсчёт лемм")
-    public void testGetAndCountLemmasInStringNormal() {
-        Map<String, Integer> expected  = new TreeMap<>(){{
-            put("42", 1);
-            put("be", 1);
-            put("first", 3);
-            put("parse", 2);
-            put("we", 1);
-            put("which", 1);
-            put("word", 1);
-        }};
-        Map<String, Integer> actual = morphologyService.
-                getAndCountNormalFormsInString("First we parsed the first word which was the first to parse. Но не 42!");
-        assertIterableEquals(expected.entrySet(), actual.entrySet());
-    }
-    @Test
-    @DisplayName("getAndCountLemmasInString - если мусор, то ничего не вернёт")
-    public void testGetAndCountLemmasInStringGarbage() {
-        Map<String, Integer> expected  = new TreeMap<>();
-        Map<String, Integer> actual = morphologyService.getAndCountNormalFormsInString("猫 или 鯨? Тьфу drat!");
-        assertIterableEquals(expected.entrySet(), actual.entrySet());
-    }
 }

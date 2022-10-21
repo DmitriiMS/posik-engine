@@ -6,9 +6,13 @@ import com.github.dmitriims.posikengine.exceptions.SearchException;
 import com.github.dmitriims.posikengine.model.Site;
 import com.github.dmitriims.posikengine.service.CommonContext;
 import com.github.dmitriims.posikengine.service.DatabaseService;
+import com.github.dmitriims.posikengine.service.LemmaUtils;
 import com.github.dmitriims.posikengine.service.MorphologyService;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.lucene.morphology.LuceneMorphology;
+import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
+import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,12 +39,18 @@ public class SearchServiceTest {
     CommonContext commonContext;
 
     @Mock
-    MorphologyService morphologyService;
-
-    @Mock
     DatabaseService databaseService;
 
+    LuceneMorphology russianLuceneMorphology = new RussianLuceneMorphology();
+    LuceneMorphology englishLuceneMorphology = new EnglishLuceneMorphology();
+    String notAWord = "(?:\\.*\\s+\\-\\s+\\.*)|[^\\-а-яА-Яa-zA-Z\\d\\ё\\Ё]+";
+
+    MorphologyService morphologyService = new MorphologyService(notAWord, russianLuceneMorphology, englishLuceneMorphology);
+
     SearchService searchService;
+
+    public SearchServiceTest() throws IOException {
+    }
 
     @Getter
     @AllArgsConstructor
@@ -99,19 +110,11 @@ public class SearchServiceTest {
     @DisplayName("correctQuery - убирает одно слово")
     public void testCorrectQueryRemoveOneWord() {
         Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-        Mockito.when(morphologyService.splitStringToWords("Мама мыла раму"))
-                .thenReturn(new String[]{"Мама", "мыла", "раму"});
-        Mockito.when(morphologyService.getNormalFormOfAWord("мама"))
-                .thenReturn(Collections.singletonList("мама"));
-        Mockito.when(morphologyService.getNormalFormOfAWord("мыла"))
-                .thenReturn(Collections.singletonList("мыла"));
-        Mockito.when(morphologyService.getNormalFormOfAWord("раму"))
-                .thenReturn(Collections.singletonList("раму"));
 
         String originalQuery = "Мама мыла раму";
         List<String> lemmas = new ArrayList<>() {{
             add("мама");
-            add("мыла");
+            add("мыть");
         }};
         String expected = "Мама мыла";
         String actual = searchService.correctQuery(lemmas, originalQuery);
@@ -197,10 +200,9 @@ public class SearchServiceTest {
             List<Site> sites = Collections.singletonList(new Site());
             doReturn(sites).when(searchSpy).getSitesToSearch(anyString());
             Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-            Mockito.when(morphologyService.getAndCountNormalFormsInString(anyString())).thenReturn(new HashMap<>());
 
             SearchException searchException = assertThrows(SearchException.class,
-                    () -> searchSpy.search(new SearchRequest("test", "site", 0, 10)));
+                    () -> searchSpy.search(new SearchRequest("и как", "site", 0, 10)));
             assertEquals("Не удалось выделить леммы для поиска из запроса", searchException.getLocalizedMessage());
         }
 
@@ -210,9 +212,6 @@ public class SearchServiceTest {
             List<Site> sites = Collections.singletonList(new Site());
             doReturn(sites).when(searchSpy).getSitesToSearch(anyString());
             Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-            Mockito.when(morphologyService.getAndCountNormalFormsInString(anyString())).thenReturn(new HashMap<>(){{
-                put("test", 1);
-            }});
             Mockito.when(commonContext.getDatabaseService()).thenReturn(databaseService);
             Mockito.when(databaseService.filterPopularLemmasOut(anyList(),anyList(),anyDouble())).thenReturn(new ArrayList<>());
 
@@ -227,9 +226,6 @@ public class SearchServiceTest {
             List<Site> sites = Collections.singletonList(new Site());
             doReturn(sites).when(searchSpy).getSitesToSearch(anyString());
             Mockito.when(commonContext.getMorphologyService()).thenReturn(morphologyService);
-            Mockito.when(morphologyService.getAndCountNormalFormsInString(anyString())).thenReturn(new HashMap<>(){{
-                put("test", 1);
-            }});
             Mockito.when(commonContext.getDatabaseService()).thenReturn(databaseService);
             Mockito.when(databaseService.filterPopularLemmasOut(anyList(),anyList(),anyDouble())).thenReturn(new ArrayList<>(){{
                 add("test");

@@ -8,6 +8,7 @@ import com.github.dmitriims.posikengine.exceptions.SearchException;
 import com.github.dmitriims.posikengine.model.Site;
 import com.github.dmitriims.posikengine.service.CommonContext;
 import com.github.dmitriims.posikengine.service.MorphologyService;
+import com.github.dmitriims.posikengine.service.LemmaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -44,7 +45,7 @@ public class SearchService {
 
         sitesToSearch = getSitesToSearch(request.getSite());
 
-        searchWordsNormalForms = commonContext.getMorphologyService().getAndCountNormalFormsInString(request.getQuery()).keySet().toArray(new String[0]);
+        searchWordsNormalForms = LemmaUtils.getAndCountNormalFormsInString(request.getQuery(), commonContext.getMorphologyService()).keySet().toArray(new String[0]);
 
         if (searchWordsNormalForms.length == 0) {
             throw new SearchException("Не удалось выделить леммы для поиска из запроса");
@@ -133,11 +134,8 @@ public class SearchService {
     }
 
     boolean lemmasContainAnyWordNormalForm(List<String> wordNormalForms, List<String> lemmas) {
-        for (String word : wordNormalForms) {
-            if (lemmas.contains(word)) {
-                return true;
-            }
-        }
-        return false;
+        List<String> lemmasWordIntersection = new ArrayList<String>(lemmas);
+        lemmasWordIntersection.retainAll(wordNormalForms);
+        return !lemmasWordIntersection.isEmpty();
     }
 }
