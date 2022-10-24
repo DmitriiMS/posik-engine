@@ -41,7 +41,7 @@ public class BeanConfiguration {
 
     @Bean(name = "userAgent")
     public String userAgent() {
-        return "${search-engine-properties.user-agent}";
+        return "Mozilla/5.0 (compatible; ${search-engine-properties.user-agent}/1.2 ; +https://github.com/DmitriiMS/posik-engine)";
     }
 
     @Bean(name = "notAWord")

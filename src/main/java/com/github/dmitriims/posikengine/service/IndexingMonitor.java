@@ -16,7 +16,7 @@ public class IndexingMonitor implements Runnable {
     private Map<Site, ForkJoinPool> poolsToMonitor;
     private CommonContext commonContext;
 
-    private final Logger log = LoggerFactory.getLogger(IndexingService.class);
+    private final Logger log = LoggerFactory.getLogger(IndexingMonitor.class);
     
     @Override
     public void run() {
