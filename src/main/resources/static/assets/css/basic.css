@@ -2391,3 +2391,9 @@ button.link {
 .wrap-content {
   margin: 0 auto;
 }
+
+/*добавленные стили*/
+.center {
+  margin: auto;
+  padding: 10px;
+}

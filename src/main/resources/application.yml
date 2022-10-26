@@ -8,7 +8,7 @@ spring:
     hibernate:
       dialect: org.hibernate.dialect.PostgreSQLDialect
       use-new-id-generator-mappings: true
-      ddl-auto: create
+      ddl-auto: update
     generate-ddl: true
     properties:
       hibernate:
@@ -16,6 +16,9 @@ spring:
           batch_size: 100
         order_updates: true
         order_inserts: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
 
 logging:
   file:
@@ -36,12 +39,15 @@ search-engine-properties:
       -
         url: https://www.lutherancathedral.ru
         name: Собор Петра и Павла
-      -
-        url: https://et-cetera.ru/mobile
-        name: Театр «Et Cetera»
-      -
-        url: https://skillbox.ru/
-        name: Skillbox
+#      -
+#        url: https://et-cetera.ru/mobile
+#        name: Театр «Et Cetera»
+#      -
+#        url: https://skillbox.ru
+#        name: Skillbox
+#      -
+#        url: https://playback.ru
+#        name: playback
     fields:
       -
         name: title
@@ -55,3 +61,12 @@ search-engine-properties:
         name: body
         selector: body
         weight: 0.8
+    authorisations:
+      -
+        username: webAdmin
+        password: webPassword
+        role: ROLE_ADMIN
+      -
+        username: searchUser
+        password: searchUserPass
+        role: ROLE_SEARCH_API_USER

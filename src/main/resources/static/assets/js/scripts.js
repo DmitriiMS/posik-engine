@@ -1460,7 +1460,7 @@ var API = function(){
     
     var send = {
         startIndexing:{
-            address: '/startIndexing',
+            address: '/api/startIndexing',
             type: 'GET',
             action: function(result, $this){
                 if (result.result){
@@ -1480,7 +1480,7 @@ var API = function(){
             }
         },
         stopIndexing: {
-            address: '/stopIndexing',
+            address: '/api/stopIndexing',
             type: 'GET',
             action: function(result, $this){
                 if (result.result){
@@ -1500,7 +1500,7 @@ var API = function(){
             }
         },
         indexPage: {
-            address: '/indexPage',
+            address: '/api/indexPage',
             type: 'POST',
             action: function(result, $this){
                 if (result.result){
@@ -1525,7 +1525,7 @@ var API = function(){
             }
         },
         search: {
-            address: '/search',
+            address: '/api/search',
             type: 'get',
             action: function(result, $this, data){
                 if (result.result){
@@ -1579,7 +1579,7 @@ var API = function(){
             }
         },
         statistics: {
-            address: '/statistics',
+            address: '/api/statistics',
             type: 'get',
             action: function(result, $this){
                 if (result.result){

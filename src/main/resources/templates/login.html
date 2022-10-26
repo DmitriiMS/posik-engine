@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Pösik Search Engine</title>
+    <meta name="description" content="Pösik Search Engine">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <link href="favicon.ico" rel="shortcut icon">
+    <link rel="preload" href="/assets/fonts/Montserrat/Montserrat-SemiBold.woff2" as="font" crossorigin="anonymous">
+    <link rel="preload" href="/assets/fonts/Montserrat/Montserrat-Light.woff2" as="font" crossorigin="anonymous">
+    <link rel="preload" href="/assets/fonts/Montserrat/Montserrat-Medium.woff2" as="font" crossorigin="anonymous">
+    <link rel="preload" href="/assets/fonts/Montserrat/Montserrat-ExtraBold.woff2" as="font" crossorigin="anonymous">
+    <link rel="stylesheet" href="/assets/css/fonts.css?v=82368483">
+    <link rel="stylesheet" href="/assets/css/basic.css?v=82368483">
+    <link rel="stylesheet" href="/assets/css/extra.css?v=82368483">
+    <!--[if lt IE 9]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+
+<body>
+<div class="center">
+    <form name="f" th:action="@{/login}" method="post">
+        <fieldset class="center">
+            <legend>Вход</legend>
+            <div th:if="${param.error}" class="alert alert-error center">
+                Ошибка входа, проверьте логин и пароль.
+            </div>
+            <div th:if="${param.logout}" class="alert alert-success center">
+                Вы успешно вышли.
+            </div>
+            <label for="username">Имя пользователя</label>
+            <input type="text" id="username" name="username"/>
+            <label for="password">Пароль</label>
+            <input type="password" id="password" name="password"/>
+            <div class="form-actions">
+                <button type="submit" class="btn">Log in</button>
+            </div>
+        </fieldset>
+    </form>
+</div>
+</body>
+</html>

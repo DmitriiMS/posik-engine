@@ -14,6 +14,16 @@ public class DefaultController {
 
     @RequestMapping(value ="/")
     public String notAdmin() {
-        return "not-admin";
+        return "greeting";
+    }
+
+    @RequestMapping(value ="/login")
+    public String login() {
+        return "login";
+    }
+
+    @RequestMapping(value = "/denied")
+    public String denied() {
+        return "denied";
     }
 }

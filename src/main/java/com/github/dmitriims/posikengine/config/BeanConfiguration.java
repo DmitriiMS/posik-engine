@@ -6,6 +6,7 @@ import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,6 +14,12 @@ import java.util.List;
 
 @Configuration
 public class BeanConfiguration {
+
+    private Environment env;
+
+    public BeanConfiguration(Environment env) {
+        this.env = env;
+    }
 
     @Bean(name = "russianMorphology")
     public LuceneMorphology russianMorphology() throws IOException {
@@ -41,7 +48,12 @@ public class BeanConfiguration {
 
     @Bean(name = "userAgent")
     public String userAgent() {
-        return "Mozilla/5.0 (compatible; ${search-engine-properties.user-agent}/1.2 ; +https://github.com/DmitriiMS/posik-engine)";
+        return "Mozilla/5.0 (compatible; " + env.getProperty("search-engine-properties.user-agent") + "/1.2 ; +https://github.com/DmitriiMS/posik-engine)";
+    }
+
+    @Bean(name = "homePage")
+    public String homePage() {
+        return env.getProperty("search-engine-properties.home-page");
     }
 
     @Bean(name = "notAWord")

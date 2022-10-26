@@ -11,13 +11,10 @@
 <![endif]-->
 <!--[if gt IE 9]><!--> <html lang="ru"> <!--<![endif]-->
 <head>
-  <title>Site Search Engine</title>
-  <meta name="description" content="Site Search Engine">
+  <title>Pösik Search Engine</title>
+  <meta name="description" content="Pösik Search Engine">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <!--meta( http-equiv="cache-control" content="no-cache")-->
-  <!--meta( http-equiv="expires" content="0")-->
-  <!--link(rel="preload" href="assets/css/extra.min.css?v=" + version as="style" crossorigin="anonymous")-->
   <link href="favicon.ico" rel="shortcut icon">
   <link rel="preload" href="/assets/fonts/Montserrat/Montserrat-SemiBold.woff2" as="font" crossorigin="anonymous">
   <link rel="preload" href="/assets/fonts/Montserrat/Montserrat-Light.woff2" as="font" crossorigin="anonymous">
@@ -59,6 +56,9 @@
     </div>
   </div>
   <div class="Middle">
+    <form class="btn btn_primary media_middle" method="post" th:action="@{/logout}">
+      <input class="btn-content" type="submit" value="Выйти">
+    </form>
     <div class="wrap">
       <div class="Site-loadingIsComplete">
         <main class="Tabs Tabs_column Middle-main">

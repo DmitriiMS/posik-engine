@@ -12,4 +12,5 @@ import java.util.List;
 public class UserProvidedData {
     private List<SiteUrlAndNameDTO> sites;
     private List<FieldDTO> fields;
+    private List<AuthDetails> authorisations;
 }
