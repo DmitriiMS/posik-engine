@@ -9,6 +9,7 @@ import com.github.dmitriims.posikengine.model.Site;
 import com.github.dmitriims.posikengine.model.Status;
 import com.github.dmitriims.posikengine.service.crawler.CrawlerContext;
 import com.github.dmitriims.posikengine.service.crawler.CrawlerService;
+import com.github.dmitriims.posikengine.service.indexing.RobotsTxtFactory;
 import crawlercommons.robots.BaseRobotRules;
 import crawlercommons.robots.SimpleRobotRulesParser;
 import lombok.Getter;
@@ -16,13 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
@@ -34,6 +30,7 @@ public class IndexingService {
     private UserProvidedData userProvidedData;
     private SimpleRobotRulesParser robotsParser;
     private CommonContext commonContext;
+    private RobotsTxtFactory robotsTxtFactory;
 
     private Map<Site, ForkJoinPool> sitePools;
     @Getter
@@ -41,10 +38,11 @@ public class IndexingService {
 
     private final Logger log = LoggerFactory.getLogger(IndexingService.class);
 
-    public IndexingService(UserProvidedData userProvidedData, SimpleRobotRulesParser robotsParser, CommonContext commonContext) {
+    public IndexingService(UserProvidedData userProvidedData, SimpleRobotRulesParser robotsParser, CommonContext commonContext, RobotsTxtFactory robotsTxtFactory) {
         this.userProvidedData = userProvidedData;
         this.robotsParser = robotsParser;
         this.commonContext = commonContext;
+        this.robotsTxtFactory = robotsTxtFactory;
     }
 
     public boolean isIndexing() {
@@ -173,29 +171,7 @@ public class IndexingService {
         return new IndexingStatusResponse(true, null);
     }
 
-    public static byte[] getRobotsTxt(String site) throws IOException {
-        byte[] robotsInBytes;
-        URL robots = new URL(site + "/robots.txt");
 
-        HttpURLConnection urlConnection = (HttpURLConnection) robots.openConnection();
-        urlConnection.setRequestMethod("HEAD");
-        if (urlConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-            return "User-agent: *\nAllow:".getBytes(StandardCharsets.UTF_8);
-        }
-
-        try (InputStream inStream = robots.openStream();
-             ByteArrayOutputStream outStream = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[4096];
-            int n = 0;
-            while ((n = inStream.read(buffer)) > 0) {
-                outStream.write(buffer, 0, n);
-            }
-            robotsInBytes = outStream.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return robotsInBytes;
-    }
 
     public String getTopLevelUrl(String url) {
         String[] splitSite = url.split("//|/");
@@ -226,7 +202,11 @@ public class IndexingService {
     public CrawlerContext generateCrawlerContext(Site site, int limit, List<Field> fields) throws IOException {
         String topLevelSite = getTopLevelUrl(site.getUrl());
         ForkJoinPool pool = new ForkJoinPool();
-        BaseRobotRules robotRules = robotsParser.parseContent(topLevelSite + "/robots.txt", getRobotsTxt(topLevelSite), "text/plain", commonContext.getUserAgent());
+        BaseRobotRules robotRules = robotsParser.parseContent(
+                topLevelSite + "/robots.txt",
+                robotsTxtFactory.getRobotsTxt(topLevelSite),
+                "text/plain",
+                commonContext.getUserAgent());
         return new CrawlerContext(site, pool, limit, new HashSet<>(fields), robotRules);
     }
 

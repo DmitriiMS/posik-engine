@@ -20,7 +20,7 @@ public class ForbiddenAccessHandler implements AccessDeniedHandler {
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if(auth != null) {
-            log.warn("Пользователь " + auth.getName() + " пытался зайти на страницу " + request.getRequestURI());
+            log.warn("Пользователь '" + auth.getName() + "' пытался зайти на страницу " + request.getRequestURI());
         }
 
         response.sendRedirect(request.getContextPath() + "/denied");

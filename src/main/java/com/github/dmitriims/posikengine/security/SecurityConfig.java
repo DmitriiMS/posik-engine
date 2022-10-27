@@ -1,26 +1,19 @@
 package com.github.dmitriims.posikengine.security;
 
-import com.github.dmitriims.posikengine.dto.userprovaideddata.AuthDetails;
 import com.github.dmitriims.posikengine.dto.userprovaideddata.UserProvidedData;
+import com.github.dmitriims.posikengine.model.User;
+import com.github.dmitriims.posikengine.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -36,21 +29,18 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(14);
     }
 
     @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        List<UserDetails> users = new ArrayList<>();
-        for(AuthDetails authDetails : userProvidedData.getAuthorisations()) {
-            users.add(new User(
-                    authDetails.getUsername(),
-                    encoder.encode(authDetails.getPassword()),
-                    Collections.singleton(new SimpleGrantedAuthority(authDetails.getRole()))
-                    )
-            );
-        }
-        return new InMemoryUserDetailsManager(users);
+    public UserDetailsService userDetailsService(UserRepository userRepository) {
+        return username -> {
+          User user = userRepository.findByUsername(username);
+          if(user == null) {
+              throw new UsernameNotFoundException("Пользователь с именем '" + username + "' не найден");
+          }
+          return user;
+        };
     }
 
     @Bean
@@ -70,7 +60,6 @@ public class SecurityConfig {
     }
 
     @Bean
-
     public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
         http.httpBasic().disable();
         http.exceptionHandling().accessDeniedHandler(forbiddenAccessHandler());
