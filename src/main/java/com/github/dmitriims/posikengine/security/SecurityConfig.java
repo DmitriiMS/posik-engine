@@ -51,6 +51,7 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
+        http.csrf().disable();
         http.httpBasic();
         http.antMatcher("/api/**")
             .authorizeRequests()
