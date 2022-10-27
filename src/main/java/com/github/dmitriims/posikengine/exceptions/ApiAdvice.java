@@ -71,12 +71,14 @@ public class ApiAdvice {
     @ExceptionHandler(IOException.class)
     public void logIOErrorAndThrowMildOne(IOException ioe) {
         log.error(ioe.toString());
+        resetIndexingFlagsIfNeeded();
         throw new UnspecifiedInternalError("Произошла неопределённая внутренняя ошибка. Нам очень жаль. Наши админы трудятся в поте лица, чтобы всё исправить! (◡‿◡✿)");
     }
 
     @ExceptionHandler(NullPointerException.class)
     public void logNullPointerExceptionAndThrowMildOne(NullPointerException npe) {
         log.error(npe.toString());
+        resetIndexingFlagsIfNeeded();
         throw new UnspecifiedInternalError("Произошла неопределённая внутренняя ошибка. Нам очень жаль. Наши админы трудятся в поте лица, чтобы всё исправить! (◡‿◡✿)");
     }
 
@@ -87,5 +89,13 @@ public class ApiAdvice {
                 new ErrorResponse(uie.getLocalizedMessage()),
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
+    }
+
+    private void resetIndexingFlagsIfNeeded() {
+        if (indexingService.getIndexingMonitorTread() == null) {
+            commonContext.setIndexingOnePage(false);
+            commonContext.setAreAllSitesIndexing(false);
+            commonContext.setIndexing(false);
+        }
     }
 }
